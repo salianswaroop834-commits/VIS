@@ -1,0 +1,90 @@
+{
+  "trained_at": "2026-09-13T16:43:42Z",
+  "dataset_version": "synthetic_v1_7500_records",
+  "classifier": {
+    "model_name": "ClaimProbabilityPredictor",
+    "version": "1.0.0",
+    "best_algorithm": "LogisticRegression",
+    "metric_evaluated": "roc_auc",
+    "all_results": {
+      "LogisticRegression": {
+        "roc_auc": 0.5892,
+        "f1_score": 0.0455,
+        "precision": 0.5,
+        "recall": 0.0238,
+        "accuracy": 0.8586,
+        "train_time_sec": 0.03
+      },
+      "RandomForestClassifier": {
+        "roc_auc": 0.5444,
+        "f1_score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "accuracy": 0.8586,
+        "train_time_sec": 0.169
+      },
+      "GradientBoostingClassifier": {
+        "roc_auc": 0.5512,
+        "f1_score": 0.1053,
+        "precision": 0.2,
+        "recall": 0.0714,
+        "accuracy": 0.8283,
+        "train_time_sec": 0.255
+      }
+    },
+    "artifact_file": "claim_probability_pipeline.joblib",
+    "feature_names": [
+      "vehicle_age",
+      "vehicle_type",
+      "fuel_type",
+      "usage_type",
+      "vehicle_value",
+      "driver_age",
+      "annual_mileage",
+      "credit_score_tier",
+      "previous_claims_count",
+      "coverage_tier",
+      "deductible_amount"
+    ]
+  },
+  "regressor": {
+    "model_name": "ClaimSeverityPredictor",
+    "version": "1.0.0",
+    "best_algorithm": "RidgeRegression",
+    "metric_evaluated": "rmse",
+    "all_results": {
+      "RidgeRegression": {
+        "rmse": 3034.93,
+        "mae": 2286.26,
+        "r2_score": -0.94,
+        "train_time_sec": 0.014
+      },
+      "RandomForestRegressor": {
+        "rmse": 3103.01,
+        "mae": 2386.62,
+        "r2_score": -1.028,
+        "train_time_sec": 0.113
+      },
+      "GradientBoostingRegressor": {
+        "rmse": 3324.91,
+        "mae": 2626.2,
+        "r2_score": -1.3284,
+        "train_time_sec": 0.075
+      }
+    },
+    "artifact_file": "claim_severity_pipeline.joblib",
+    "feature_names": [
+      "vehicle_age",
+      "vehicle_type",
+      "fuel_type",
+      "usage_type",
+      "vehicle_value",
+      "driver_age",
+      "annual_mileage",
+      "credit_score_tier",
+      "previous_claims_count",
+      "coverage_tier",
+      "deductible_amount"
+    ]
+  }
+}

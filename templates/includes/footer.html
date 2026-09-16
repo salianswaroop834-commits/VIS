@@ -1,0 +1,68 @@
+<footer class="nx-footer">
+    <div class="container">
+        <div class="row g-4 mb-5">
+            <div class="col-lg-4 col-md-6">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        <path d="m9 12 2 2 4-4"/>
+                    </svg>
+                    <span class="fs-4 fw-bold text-white font-heading">Nexisure</span>
+                    <span class="nx-brand-badge">Vehicle</span>
+                </div>
+                <p class="text-secondary small pe-lg-4">
+                    An advanced learning and capstone vehicle insurance management platform powered by responsible AI, scikit-learn decision-support pipelines, grounded RAG assistance, and full-stack Python engineering.
+                </p>
+                <div class="badge bg-dark border border-secondary text-info p-2 small mt-2">
+                    <i class="bi bi-shield-check me-1"></i> Responsible AI & Human-in-the-Loop Architecture
+                </div>
+            </div>
+
+            <div class="col-lg-2 col-md-3 col-6">
+                <div class="nx-footer-title">Navigation</div>
+                <ul class="list-unstyled small d-flex flex-column gap-2">
+                    <li><a href="{% url 'home' %}">Home</a></li>
+                    <li><a href="{% url 'coverage' %}">Coverage Plans</a></li>
+                    <li><a href="{% url 'quotations:estimator' %}">Quote Estimator</a></li>
+                    <li><a href="{% url 'how-it-works' %}">How It Works</a></li>
+                    <li><a href="{% url 'faq' %}">FAQ & Procedures</a></li>
+                </ul>
+            </div>
+
+            <div class="col-lg-2 col-md-3 col-6">
+                <div class="nx-footer-title">Platform Portals</div>
+                <ul class="list-unstyled small d-flex flex-column gap-2">
+                    <li><a href="{% url 'accounts:login' %}">Customer Portal</a></li>
+                    <li><a href="{% url 'staff:underwriter-dashboard' %}">Underwriter Desk</a></li>
+                    <li><a href="{% url 'staff:claims-handler-dashboard' %}">Claims Operations</a></li>
+                    <li><a href="{% url 'staff:admin-dashboard' %}">Admin Governance</a></li>
+                    <li><a href="{% url 'chatbot:chat' %}">AI Chatbot</a></li>
+                </ul>
+            </div>
+
+            <div class="col-lg-4 col-md-12">
+                <div class="nx-footer-title">Responsible Prototype Notice</div>
+                <div class="p-3 rounded-3 bg-opacity-10 bg-info border border-info border-opacity-25 small text-light">
+                    <p class="mb-2">
+                        <strong>Educational Demonstration Only:</strong>
+                    </p>
+                    <p class="mb-0 text-secondary">
+                        {{ PROTOTYPE_DISCLAIMER }}
+                        Never use real financial credentials, personal identity documents, or real credit card information.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="border-top border-secondary border-opacity-25 pt-4 d-flex flex-column flex-md-row justify-content-between align-items-center small text-secondary gap-3">
+            <div>
+                &copy; {{ CURRENT_YEAR }} {{ PLATFORM_NAME }}. Built for academic and technical capstone evaluation.
+            </div>
+            <div class="d-flex gap-3">
+                <a href="{% url 'privacy' %}">Privacy Policy</a>
+                <a href="{% url 'terms' %}">Terms of Service</a>
+                <a href="{% url 'health-check' %}" class="text-success"><i class="bi bi-activity"></i> System Status</a>
+            </div>
+        </div>
+    </div>
+</footer>

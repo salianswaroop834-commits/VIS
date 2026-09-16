@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}How It Works | Nexisure Vehicle Insurance Lifecycle{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-white">
+    <div class="container py-4">
+        <div class="text-center max-w-700 mx-auto mb-5">
+            <span class="badge bg-primary bg-opacity-10 text-primary fw-bold text-uppercase px-3 py-2 rounded-pill">End-to-End Journey</span>
+            <h1 class="h1 fw-bold mt-3 mb-3">How Nexisure Protects Your Vehicle</h1>
+            <p class="text-secondary">
+                A transparent, step-by-step walkthrough of our insurance lifecycle from quotation to settlement.
+            </p>
+        </div>
+
+        <div class="row g-4 position-relative">
+            <div class="col-lg-3 col-md-6">
+                <div class="nx-card h-100 border-top border-4 border-primary">
+                    <div class="display-5 fw-bold text-primary mb-2">01</div>
+                    <h3 class="h5 fw-bold mb-2">Get a Transparent Quote</h3>
+                    <p class="text-secondary small mb-0">
+                        Input vehicle specifications, model year, and declared value. Receive transparent rate calculations alongside an explainable coverage recommendation based on vehicle age and risk.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+                <div class="nx-card h-100 border-top border-4 border-info">
+                    <div class="display-5 fw-bold text-info mb-2">02</div>
+                    <h3 class="h5 fw-bold mb-2">Simulated Checkout</h3>
+                    <p class="text-secondary small mb-0">
+                        Complete your policy issuance through our educational checkout simulator featuring Luhn checksum validation and instant policy generation with locked financial rates.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+                <div class="nx-card h-100 border-top border-4 border-warning">
+                    <div class="display-5 fw-bold text-warning mb-2">03</div>
+                    <h3 class="h5 fw-bold mb-2">File a Claim Anytime</h3>
+                    <p class="text-secondary small mb-0">
+                        Register a claim through our customer portal or directly via the conversational AI assistant with explicit confirmation steps. Claims enter an unassigned shared queue.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+                <div class="nx-card h-100 border-top border-4 border-success">
+                    <div class="display-5 fw-bold text-success mb-2">04</div>
+                    <h3 class="h5 fw-bold mb-2">Human Review & Settlement</h3>
+                    <p class="text-secondary small mb-0">
+                        A licensed claims handler self-assigns the claim, inspects damage evidence, reviews ML risk estimations as decision support, and authorizes final settlement or rejection.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

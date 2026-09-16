@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Register Vehicle Claim | Nexisure Customer Desk{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-white">
+    <div class="container py-2 max-w-700">
+        <div class="text-center mb-4">
+            <span class="nx-brand-badge mb-2 d-inline-block">Claim Registration</span>
+            <h1 class="h3 fw-bold">File a Vehicle Insurance Claim</h1>
+            <p class="text-secondary small">Submit incident details for assignment to the human claims adjudication queue</p>
+        </div>
+
+        <div class="alert alert-info small" role="alert">
+            <i class="bi bi-info-circle-fill me-1"></i>
+            <strong>Queue Policy:</strong> Claims must be filed against active policies. Submitted claims enter an unassigned shared queue where an authorized claims handler will self-assign and review your submission.
+        </div>
+
+        <div class="nx-card shadow-sm p-4 p-md-5">
+            <form method="post" action="{% url 'claims:create' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary small">Select Active Policy <span class="text-danger">*</span></label>
+                    <select class="form-select" name="policy_id" required>
+                        <option value="">-- Choose Covered Vehicle Policy --</option>
+                        {% for p in policies %}
+                        <option value="{{ p.id }}" {% if selected_policy_id == p.id|stringformat:"s" %}selected{% endif %}>
+                            {{ p.policy_number }} - {{ p.vehicle.make }} {{ p.vehicle.model }} ({{ p.vehicle.registration_number }}) [{{ p.coverage_plan.tier }}]
+                        </option>
+                        {% empty %}
+                        <option disabled>No active policies found. You need an active policy to file a claim.</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-secondary small">Incident Date & Time <span class="text-danger">*</span></label>
+                        <input type="datetime-local" class="form-control" name="incident_date" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-secondary small">Estimated Loss Amount (₹) <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" name="estimated_loss_amount" required placeholder="1500" min="50" step="50">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary small">Incident Location <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" name="incident_location" required placeholder="Intersection of 5th Ave & Pine St, Seattle">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary small">Incident Description <span class="text-danger">*</span></label>
+                    <textarea class="form-control" name="incident_description" rows="4" required placeholder="Describe what occurred, road conditions, and damage sustained to the vehicle..."></textarea>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold text-secondary small">Supporting Evidence / Photos (Optional)</label>
+                    <input type="file" class="form-control" name="document_file" accept="image/*,.pdf">
+                    <div class="form-text">Attach photos of vehicle damage, police FIR/report, or repair estimates.</div>
+                </div>
+
+                <button type="submit" class="nx-btn-primary w-100 justify-content-center py-2.5">
+                    <i class="bi bi-send-check-fill"></i> Submit Claim to Processing Queue
+                </button>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

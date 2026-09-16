@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}Coverage Comparison | Nexisure Vehicle Insurance{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-white">
+    <div class="container py-4">
+        <div class="text-center max-w-700 mx-auto mb-5">
+            <span class="badge bg-primary bg-opacity-10 text-primary fw-bold text-uppercase px-3 py-2 rounded-pill">Plans & Protection</span>
+            <h1 class="h1 fw-bold mt-3 mb-3">Compare Vehicle Insurance Coverages</h1>
+            <p class="text-secondary">
+                Select the protection tier that aligns with your vehicle age, usage patterns, and budget.
+            </p>
+        </div>
+
+        <div class="row g-4 justify-content-center">
+            <!-- Plan 1: Third-Party -->
+            <div class="col-lg-4 col-md-6">
+                <div class="nx-card h-100 d-flex flex-column">
+                    <div class="mb-4">
+                        <span class="badge bg-secondary mb-2">Mandatory Baseline</span>
+                        <h3 class="h4 fw-bold">Third-Party Liability</h3>
+                        <p class="text-secondary small">Essential legal compliance covering bodily injury and property damage to third parties.</p>
+                        <div class="my-3">
+                            <span class="display-6 fw-bold text-primary">~1.25%</span>
+                            <span class="text-secondary small">/ year of vehicle IDV</span>
+                        </div>
+                    </div>
+
+                    <ul class="list-unstyled small d-flex flex-column gap-2 mb-4 flex-grow-1">
+                        <li class="d-flex align-items-center gap-2"><i class="bi bi-check2 text-success fw-bold"></i> Third-party property damage</li>
+                        <li class="d-flex align-items-center gap-2"><i class="bi bi-check2 text-success fw-bold"></i> Third-party bodily injury liability</li>
+                        <li class="d-flex align-items-center gap-2 text-muted"><i class="bi bi-x text-danger fw-bold fs-5"></i> Own damage to your vehicle</li>
+                        <li class="d-flex align-items-center gap-2 text-muted"><i class="bi bi-x text-danger fw-bold fs-5"></i> Theft or total fire loss</li>
+                        <li class="d-flex align-items-center gap-2 text-muted"><i class="bi bi-x text-danger fw-bold fs-5"></i> Roadside assistance</li>
+                    </ul>
+
+                    <a href="{% url 'quotations:estimator' %}?plan=THIRD_PARTY" class="nx-btn-outline w-100 justify-content-center">
+                        Select Third-Party
+                    </a>
+                </div>
+            </div>
+
+            <!-- Plan 2: Comprehensive (Featured) -->
+            <div class="col-lg-4 col-md-6">
+                <div class="nx-card nx-card-highlight h-100 d-flex flex-column shadow-lg">
+                    <div class="nx-card-badge">Most Popular</div>
+                    <div class="mb-4">
+                        <span class="badge bg-primary mb-2">Complete Peace of Mind</span>
+                        <h3 class="h4 fw-bold">Comprehensive Insurance</h3>
+                        <p class="text-secondary small">Complete protection covering third-party liability plus own-damage from collisions, fire, theft, and natural disasters.</p>
+                        <div class="my-3">
+                            <span class="display-6 fw-bold text-primary">~2.85%</span>
+                            <span class="text-secondary small">/ year of vehicle IDV</span>
+                        </div>
+                    </div>
+
+                    <ul class="list-unstyled small d-flex flex-column gap-2 mb-4 flex-grow-1">
+                        <li class="d-flex align-items-center gap-2"><i class="bi bi-check2-circle text-success fw-bold"></i> Third-party bodily injury & property</li>
+                        <li class="d-flex align-items-center gap-2"><i class="bi bi-check2-circle text-success fw-bold"></i> Own vehicle collision damage</li>
+                        <li class="d-flex align-items-center gap-2"><i class="bi bi-check2-circle text-success fw-bold"></i> Theft, vandalism & fire protection</li>
+                        <li class="d-flex align-items-center gap-2"><i class="bi bi-check2-circle text-success fw-bold"></i> Natural flood & storm coverage</li>
+                        <li class="d-flex align-items-center gap-2"><i class="bi bi-check2-circle text-success fw-bold"></i> 24/7 Roadside emergency dispatch</li>
+                    </ul>
+
+                    <a href="{% url 'quotations:estimator' %}?plan=COMPREHENSIVE" class="nx-btn-primary w-100 justify-content-center">
+                        Select Comprehensive
+                    </a>
+                </div>
+            </div>
+
+            <!-- Plan 3: Zero Depreciation -->
+            <div class="col-lg-4 col-md-6">
+                <div class="nx-card h-100 d-flex flex-column">
+                    <div class="mb-4">
+                        <span class="badge bg-dark mb-2">Zero Out-of-Pocket</span>
+                        <h3 class="h4 fw-bold">Zero-Dep Premium</h3>
+                        <p class="text-secondary small">Comprehensive coverage with 100% depreciation waiver on glass, fiber, rubber, and metal parts during claims.</p>
+                        <div class="my-3">
+                            <span class="display-6 fw-bold text-primary">~3.50%</span>
+                            <span class="text-secondary small">/ year of vehicle IDV</span>
+                        </div>
+                    </div>
+
+                    <ul class="list-unstyled small d-flex flex-column gap-2 mb-4 flex-grow-1">
+                        <li class="d-flex align-items-center gap-2"><i class="bi bi-check2-circle text-success fw-bold"></i> Everything in Comprehensive Plan</li>
+                        <li class="d-flex align-items-center gap-2"><i class="bi bi-check2-circle text-success fw-bold"></i> 0% depreciation deduction on parts</li>
+                        <li class="d-flex align-items-center gap-2"><i class="bi bi-check2-circle text-success fw-bold"></i> Engine & gearbox water-ingress protection</li>
+                        <li class="d-flex align-items-center gap-2"><i class="bi bi-check2-circle text-success fw-bold"></i> Consumables & key replacement cover</li>
+                        <li class="d-flex align-items-center gap-2"><i class="bi bi-check2-circle text-success fw-bold"></i> Priority claims processing lane</li>
+                    </ul>
+
+                    <a href="{% url 'quotations:estimator' %}?plan=ZERO_DEP_PREMIUM" class="nx-btn-outline w-100 justify-content-center">
+                        Select Zero-Dep Premium
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,293 @@
+{% extends 'base.html' %}
+
+{% block title %}Claim {{ claim.claim_number }} | Nexisure Claims{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-white">
+    <div class="container py-2 max-w-900">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <a href="{% if user.is_claims_handler %}{% url 'claims:queue' %}{% else %}{% url 'customers:claims' %}{% endif %}" class="small text-secondary text-decoration-none">
+                    <i class="bi bi-arrow-left"></i> Back to {% if user.is_claims_handler %}Claims Queue{% else %}My Claims{% endif %}
+                </a>
+                <h1 class="h3 fw-bold mt-2">Vehicle Incident Claim</h1>
+                <span class="font-monospace text-primary fw-bold fs-5">{{ claim.claim_number }}</span>
+            </div>
+            <span class="badge {% if claim.status == 'PENDING' %}bg-secondary{% elif claim.status == 'IN_REVIEW' %}bg-warning text-dark{% elif claim.status == 'APPROVED' %}bg-success{% elif claim.status == 'SETTLED' %}bg-info text-dark{% else %}bg-danger{% endif %} fs-6 px-3 py-2">
+                {{ claim.get_status_display }}
+            </span>
+        </div>
+
+        <!-- Responsible AI Governance & Simulation Disclaimer -->
+        <div class="alert alert-light border small d-flex align-items-center gap-2 mb-4" role="alert">
+            <i class="bi bi-shield-check text-primary fs-5"></i>
+            <div>
+                <strong>Human-in-the-Loop Claims Adjudication:</strong> All claim approvals, settlement payouts, and rejection decisions are finalized strictly by human claims handlers. Payouts and settlements represent simulated academic insurance transactions.
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-8">
+                <!-- Incident Overview Card -->
+                <div class="nx-card shadow-sm mb-4">
+                    <h4 class="h5 fw-bold mb-3">Incident Overview</h4>
+                    <dl class="row small mb-0">
+                        <dt class="col-4 text-secondary">Incident Date & Time:</dt>
+                        <dd class="col-8">{{ claim.incident_date|date:"F d, Y H:i" }}</dd>
+
+                        <dt class="col-4 text-secondary">Location:</dt>
+                        <dd class="col-8">{{ claim.incident_location }}</dd>
+
+                        <dt class="col-4 text-secondary">Claimed Loss Amount:</dt>
+                        <dd class="col-8 fw-bold font-monospace text-dark">₹{{ claim.estimated_loss_amount|floatformat:2 }}</dd>
+
+                        <dt class="col-4 text-secondary">Incident Description:</dt>
+                        <dd class="col-8 text-secondary">{{ claim.incident_description }}</dd>
+                    </dl>
+                </div>
+
+                <!-- Adjudication Result Card (if finalized) -->
+                {% if claim.status == 'APPROVED' %}
+                    <div class="nx-card shadow-sm mb-4 border-start border-4 border-success">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="h6 fw-bold text-success mb-0"><i class="bi bi-check-circle-fill me-1"></i> Settlement Authorized</h5>
+                            <span class="fs-4 fw-bold text-success font-monospace">₹{{ claim.settlement_amount|floatformat:2 }}</span>
+                        </div>
+                        <p class="small text-secondary mb-0">
+                            Approved by Handler <strong>{{ claim.handler.staff_code }}</strong> ({{ claim.handler.user.email }}). Settlement payout is authorized and ready for disbursement.
+                        </p>
+                    </div>
+                {% elif claim.status == 'SETTLED' %}
+                    <div class="nx-card shadow-sm mb-4 border-start border-4 border-info">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="h6 fw-bold text-dark mb-0"><i class="bi bi-cash-stack text-success me-1"></i> Claim Settled (Disbursed)</h5>
+                            <span class="fs-4 fw-bold text-success font-monospace">₹{{ claim.settlement_amount|floatformat:2 }}</span>
+                        </div>
+                        <p class="small text-secondary mb-1">
+                            Simulated payout completed. Settlement Reference: <span class="font-monospace fw-bold text-dark">{{ claim.settlement_reference|default:"SIM-TXN-DEMO" }}</span>
+                        </p>
+                        <div class="text-muted small fst-italic">
+                            Settled on {{ claim.settled_at|date:"M d, Y H:i"|default:claim.updated_at|date:"M d, Y H:i" }} &bull; Academic simulation mode
+                        </div>
+                    </div>
+                {% elif claim.status == 'REJECTED' %}
+                    <div class="nx-card shadow-sm mb-4 border-start border-4 border-danger">
+                        <h5 class="h6 fw-bold text-danger mb-2"><i class="bi bi-x-circle-fill me-1"></i> Claim Denied</h5>
+                        <p class="small text-secondary mb-1"><strong>Documented Reason:</strong></p>
+                        <p class="small bg-light p-3 rounded text-danger mb-0">{{ claim.rejection_reason }}</p>
+                    </div>
+                {% endif %}
+
+                <!-- Handler Settlement Desk (if approved) -->
+                {% if can_settle %}
+                    <div class="nx-card shadow-sm mb-4 border-top border-4 border-success">
+                        <h5 class="h6 fw-bold mb-2 text-success"><i class="bi bi-wallet2 me-1"></i> Simulated Settlement Disbursement</h5>
+                        <p class="small text-secondary mb-3">Execute academic/demo simulated settlement payout to finalize this claim.</p>
+                        
+                        <form method="post" action="{% url 'claims:settle' claim.id %}" class="p-3 rounded-3 bg-light border">
+                            {% csrf_token %}
+                            <div class="mb-2">
+                                <label class="form-label small text-secondary fw-semibold">Disbursement Amount (₹)</label>
+                                <input type="number" class="form-control form-control-sm font-monospace" name="settlement_amount" value="{{ claim.settlement_amount }}" max="{{ claim.settlement_amount }}" step="50" required>
+                                <small class="text-muted">Authorized payout ceiling: ₹{{ claim.settlement_amount|floatformat:2 }}</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small text-secondary fw-semibold">Settlement Notes (Optional)</label>
+                                <input type="text" class="form-control form-control-sm" name="notes" placeholder="e.g. Authorized via NEFT simulation to customer verified account">
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-success">
+                                <i class="bi bi-check-all"></i> Disburse Simulated Settlement (₹{{ claim.settlement_amount|floatformat:2 }})
+                            </button>
+                        </form>
+                    </div>
+                {% endif %}
+
+                <!-- Handler Adjudication Workspace (if in-review) -->
+                {% if can_decide %}
+                    <div class="nx-card shadow-lg mb-4 border-top border-4 border-warning">
+                        <h5 class="h6 fw-bold mb-3"><i class="bi bi-gavel me-2 text-warning"></i> Handler Adjudication Desk</h5>
+                        
+                        <!-- Approval Form -->
+                        <form method="post" action="{% url 'claims:decision' claim.id %}" class="mb-4 p-3 rounded-3 bg-light border">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="approve">
+                            <h6 class="fw-bold text-success small mb-2"><i class="bi bi-check2-circle"></i> Approve Claim & Authorize Payout</h6>
+                            
+                            <div class="mb-2">
+                                <label class="form-label small text-secondary fw-semibold">Settlement Amount (₹)</label>
+                                <input type="number" class="form-control form-control-sm font-monospace" name="settlement_amount" value="{{ claim.estimated_loss_amount }}" max="{{ user.staff_profile.max_claim_approval_limit }}" step="50" required>
+                                <small class="text-muted">Your approval authority limit: ₹{{ user.staff_profile.max_claim_approval_limit|floatformat:0 }} (Vehicle IDV: ₹{{ claim.policy.vehicle.vehicle_value|floatformat:0 }})</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small text-secondary fw-semibold">Adjudication Notes</label>
+                                <textarea class="form-control form-control-sm" name="notes" rows="2" placeholder="Damage photos verified against repair estimate..."></textarea>
+                            </div>
+                            <button type="submit" class="nx-btn-primary btn-sm">
+                                <i class="bi bi-check2"></i> Authorize Approval & Settlement
+                            </button>
+                        </form>
+
+                        <!-- Rejection Form -->
+                        <form method="post" action="{% url 'claims:decision' claim.id %}" class="p-3 rounded-3 bg-light border">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="reject">
+                            <h6 class="fw-bold text-danger small mb-2"><i class="bi bi-x-circle"></i> Deny Claim with Reason</h6>
+                            
+                            <div class="mb-2">
+                                <label class="form-label small text-secondary fw-semibold">Mandatory Rejection Reason</label>
+                                <textarea class="form-control form-control-sm" name="rejection_reason" rows="2" required placeholder="Incident occurred outside active coverage term / excluded loss clause..."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-x-lg"></i> Issue Formal Claim Rejection
+                            </button>
+                        </form>
+                    </div>
+                {% endif %}
+
+                <!-- Supporting Documents Section -->
+                <div class="nx-card shadow-sm mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="h6 fw-bold mb-0"><i class="bi bi-paperclip text-primary me-2"></i> Supporting Documents</h5>
+                        <span class="badge bg-light text-dark border">{{ documents.count }} file{{ documents.count|pluralize }}</span>
+                    </div>
+
+                    {% if documents %}
+                        <div class="table-responsive mb-3">
+                            <table class="table table-sm table-hover align-middle small mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Document Title</th>
+                                        <th>Category</th>
+                                        <th>Uploaded</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for doc in documents %}
+                                    <tr>
+                                        <td class="fw-semibold text-dark">{{ doc.title }}</td>
+                                        <td><span class="badge bg-light text-secondary border">{{ doc.get_document_type_display }}</span></td>
+                                        <td class="text-muted">{{ doc.created_at|date:"M d, Y" }}</td>
+                                        <td>
+                                            <a href="{% url 'claims:document-download' doc.pk %}" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2">
+                                                <i class="bi bi-download me-1"></i> View / Download
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="small text-muted mb-3">No supporting documentation uploaded yet.</p>
+                    {% endif %}
+
+                    {% if can_upload_doc %}
+                        <div class="border-top pt-3">
+                            <h6 class="small fw-bold text-secondary mb-2"><i class="bi bi-cloud-arrow-up"></i> Upload Supporting Document</h6>
+                            <form method="post" action="{% url 'claims:document-upload' claim.pk %}" enctype="multipart/form-data" class="row g-2 align-items-end">
+                                {% csrf_token %}
+                                <div class="col-md-4">
+                                    <label class="form-label small text-muted mb-1">Document Category</label>
+                                    <select class="form-select form-select-sm" name="document_type" required>
+                                        {% for code, label in doc_type_choices %}
+                                        <option value="{{ code }}">{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small text-muted mb-1">Title / Caption</label>
+                                    <input type="text" class="form-control form-control-sm" name="document_title" placeholder="e.g. Garage Repair Invoice" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small text-muted mb-1">Select File</label>
+                                    <div class="input-group input-group-sm">
+                                        <input type="file" class="form-control form-control-sm" name="document_file" required>
+                                        <button type="submit" class="btn btn-primary btn-sm">Upload</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Event Timeline Trail -->
+                <div class="nx-card shadow-sm mb-4">
+                    <h5 class="h6 fw-bold mb-3"><i class="bi bi-clock-history text-primary me-2"></i> Claim Event Trail</h5>
+                    <div class="d-flex flex-column gap-3 small">
+                        {% for ev in events %}
+                            <div class="border-start border-2 border-primary ps-3 py-1">
+                                <div class="d-flex justify-content-between">
+                                    <strong class="text-dark">{{ ev.get_event_type_display }}</strong>
+                                    <span class="text-muted">{{ ev.created_at|date:"M d, Y H:i" }}</span>
+                                </div>
+                                <div class="text-secondary small">{{ ev.notes }}</div>
+                                <div class="text-muted" style="font-size: 0.72rem;">Actor: {{ ev.actor.email|default:"System" }} ({{ ev.actor_role }})</div>
+                            </div>
+                        {% empty %}
+                            <span class="text-muted">No events recorded.</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <!-- Policy Details Card -->
+                <div class="nx-card shadow-sm mb-4">
+                    <h5 class="h6 fw-bold mb-3">Covered Policy</h5>
+                    <dl class="row small mb-0">
+                        <dt class="col-5 text-secondary">Policy #:</dt>
+                        <dd class="col-7 font-monospace fw-bold">
+                            <a href="{% url 'policies:detail' claim.policy.id %}" class="text-primary text-decoration-none">
+                                {{ claim.policy.policy_number }}
+                            </a>
+                        </dd>
+
+                        <dt class="col-5 text-secondary">Vehicle:</dt>
+                        <dd class="col-7">{{ claim.policy.vehicle.make }} {{ claim.policy.vehicle.model }}</dd>
+
+                        <dt class="col-5 text-secondary">Reg Plate:</dt>
+                        <dd class="col-7 font-monospace fw-bold">{{ claim.policy.vehicle.registration_number }}</dd>
+
+                        <dt class="col-5 text-secondary">Plan:</dt>
+                        <dd class="col-7">{{ claim.policy.coverage_plan.name }}</dd>
+
+                        <dt class="col-5 text-secondary">Deductible:</dt>
+                        <dd class="col-7">₹{{ claim.policy.deductible_amount|floatformat:2 }}</dd>
+
+                        <dt class="col-5 text-secondary">Vehicle IDV:</dt>
+                        <dd class="col-7">₹{{ claim.policy.vehicle.vehicle_value|floatformat:2 }}</dd>
+                    </dl>
+                </div>
+
+                <!-- Handler Card -->
+                <div class="nx-card shadow-sm">
+                    <h5 class="h6 fw-bold mb-3">Assigned Handler</h5>
+                    {% if claim.handler %}
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <i class="bi bi-person-badge fs-4 text-warning"></i>
+                            <div>
+                                <div class="fw-bold small">{{ claim.handler.user.get_full_name|default:claim.handler.user.email }}</div>
+                                <span class="badge bg-light text-dark border">{{ claim.handler.staff_code }}</span>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-secondary small mb-3">
+                            <i class="bi bi-inbox me-1"></i> In Shared Queue (Unassigned)
+                        </div>
+                        {% if user.is_claims_handler or user.is_administrator %}
+                            <form method="post" action="{% url 'claims:self-assign' claim.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="nx-btn-primary btn-sm w-100 justify-content-center">
+                                    <i class="bi bi-hand-index-thumb"></i> Pick Up / Self-Assign
+                                </button>
+                            </form>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+

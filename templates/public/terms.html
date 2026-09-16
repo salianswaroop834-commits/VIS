@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}Terms of Service | Nexisure Vehicle Insurance{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-white">
+    <div class="container py-4 max-w-800">
+        <h1 class="h2 fw-bold mb-4">Terms of Service & Prototype Disclosures</h1>
+        
+        <div class="p-4 rounded-3 bg-light border border-info border-opacity-25 mb-4">
+            <h5 class="fw-bold text-primary mb-2"><i class="bi bi-info-circle-fill me-2"></i>Academic & Capstone Prototype Notice</h5>
+            <p class="small text-secondary mb-0">
+                This platform is an academic engineering demonstration prototype. All policy numbers, vehicle registrations, quotation rates, and financial transactions are synthetic or simulated. Do not provide real government IDs, sensitive personal records, or valid payment card numbers.
+            </p>
+        </div>
+
+        <div class="text-secondary small d-flex flex-column gap-3">
+            <p><strong>1. Simulated Services:</strong> Quotation drafts, coverage recommendations, and checkout processes simulate real-world vehicle insurance workflows without issuing statutory coverage.</p>
+            <p><strong>2. Decision-Support AI:</strong> Machine learning inferences (claim probability, loss estimations) and conversational RAG responses are provided for educational evaluation and do not represent binding underwriting advice.</p>
+            <p><strong>3. Acceptable Use:</strong> Users agree to evaluate the system using test accounts and synthetic vehicle data provided in the platform documentation.</p>
+        </div>
+    </div>
+</section>
+{% endblock %}

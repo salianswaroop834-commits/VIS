@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+
+{% block title %}Quotation {{ quotation.quotation_number }} | Nexisure{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-light">
+    <div class="container py-2" style="max-width: 900px;">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+            <div>
+                <a href="{% url 'quotations:create' %}" class="small text-secondary text-decoration-none">
+                    <i class="bi bi-arrow-left"></i> Create Another Quote
+                </a>
+                <h1 class="h3 fw-bold mt-1 mb-0">Quotation Overview</h1>
+                <span class="font-monospace text-primary fw-semibold">{{ quotation.quotation_number }}</span>
+            </div>
+            <div>
+                {% if quotation.status == 'DRAFT' %}
+                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning fs-6 px-3 py-2 rounded-pill">
+                        <i class="bi bi-pencil me-1"></i> Draft Quote
+                    </span>
+                {% elif quotation.status == 'ACCEPTED' %}
+                    <span class="badge bg-primary-subtle text-primary border border-primary fs-6 px-3 py-2 rounded-pill">
+                        <i class="bi bi-hand-thumbs-up me-1"></i> Accepted by Customer
+                    </span>
+                {% elif quotation.status == 'CONVERTED' %}
+                    <span class="badge bg-success-subtle text-success border border-success fs-6 px-3 py-2 rounded-pill">
+                        <i class="bi bi-shield-check me-1"></i> Converted to Active Policy
+                    </span>
+                {% else %}
+                    <span class="badge bg-secondary-subtle text-secondary border fs-6 px-3 py-2 rounded-pill">
+                        {{ quotation.get_status_display }}
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Left Column: Coverage & Inclusions -->
+            <div class="col-lg-7">
+                <!-- Plan Summary Card -->
+                <div class="card shadow-sm border-0 rounded-3 p-4 mb-4 bg-white">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h4 class="h5 fw-bold mb-0 text-dark">{{ quotation.coverage_plan.name }}</h4>
+                        <span class="badge bg-light text-primary border px-2.5 py-1">{{ quotation.duration_years }} Year Term</span>
+                    </div>
+                    <p class="text-secondary small mb-3">{{ quotation.coverage_plan.description }}</p>
+
+                    <hr class="my-3">
+
+                    <!-- Standard Features -->
+                    <h5 class="h6 fw-bold text-dark mb-2">Standard Plan Features</h5>
+                    <ul class="list-unstyled small d-flex flex-column gap-2 mb-3">
+                        {% for feat in standard_features %}
+                            <li class="d-flex align-items-start gap-2">
+                                <i class="bi bi-check-circle-fill text-success mt-0.5"></i>
+                                <span>{{ feat.title }}</span>
+                            </li>
+                        {% empty %}
+                            <li class="text-muted">Standard vehicle insurance inclusions apply.</li>
+                        {% endfor %}
+                    </ul>
+
+                    <!-- Selected Add-on Riders -->
+                    {% if quotation.selected_features.exists %}
+                        <h5 class="h6 fw-bold text-dark mb-2 border-top pt-3">Selected Optional Riders</h5>
+                        <ul class="list-unstyled small d-flex flex-column gap-2 mb-0">
+                            {% for rider in quotation.selected_features.all %}
+                                <li class="d-flex align-items-center justify-content-between p-2 bg-light rounded-2">
+                                    <span class="fw-medium text-dark"><i class="bi bi-plus-circle text-primary me-1"></i> {{ rider.title }}</span>
+                                    <span class="badge bg-primary-subtle text-primary font-monospace">+₹{{ rider.add_on_premium|floatformat:2 }}/yr</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+
+                <!-- Vehicle & Customer Details -->
+                <div class="card shadow-sm border-0 rounded-3 p-4 bg-white">
+                    <h5 class="h6 fw-bold text-dark mb-3">Insured Asset & Customer Profile</h5>
+                    <dl class="row mb-0 small">
+                        {% if quotation.vehicle %}
+                            <dt class="col-5 text-secondary">Insured Vehicle:</dt>
+                            <dd class="col-7 fw-bold">{{ quotation.vehicle.make }} {{ quotation.vehicle.model }} ({{ quotation.vehicle.manufacture_year }})</dd>
+                            <dt class="col-5 text-secondary">Registration Plate:</dt>
+                            <dd class="col-7 font-monospace fw-bold">{{ quotation.vehicle.registration_number }}</dd>
+                        {% endif %}
+                        <dt class="col-5 text-secondary">Insured Declared Value:</dt>
+                        <dd class="col-7 font-monospace text-success fw-bold">₹{{ quotation.vehicle_value|floatformat:2 }}</dd>
+
+                        {% if quotation.customer %}
+                            <dt class="col-5 text-secondary">Customer Account:</dt>
+                            <dd class="col-7">{{ quotation.customer.user.get_full_name|default:quotation.customer.user.email }} ({{ quotation.customer.customer_code }})</dd>
+                        {% endif %}
+
+                        {% if quotation.underwriter %}
+                            <dt class="col-5 text-secondary">Assigned Underwriter:</dt>
+                            <dd class="col-7 text-primary">{{ quotation.underwriter.staff_code }}</dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Right Column: Rate Breakdown & Action Card -->
+            <div class="col-lg-5">
+                <div class="card shadow border-0 rounded-3 p-4 bg-white sticky-top" style="top: 2rem;">
+                    <div class="text-secondary small fw-medium">Total Calculated Premium</div>
+                    <div class="display-6 fw-bold text-primary font-monospace my-1">
+                        ₹{{ quotation.calculated_premium|floatformat:2 }}
+                    </div>
+                    <div class="badge bg-light text-dark border align-self-start mb-3">
+                        Compulsory Deductible: ₹{{ quotation.deductible_amount|floatformat:2 }}
+                    </div>
+
+                    <dl class="row small text-secondary mb-3 border-top pt-3">
+                        <dt class="col-7">Annual Base Rate:</dt>
+                        <dd class="col-5 text-end font-monospace">{{ quotation.coverage_plan.base_rate_percentage }}% IDV</dd>
+
+                        <dt class="col-7">Base Plan Premium:</dt>
+                        <dd class="col-5 text-end font-monospace">₹{{ quotation.base_premium|default:quotation.calculated_premium|floatformat:2 }}</dd>
+
+                        {% if quotation.addon_premium > 0 %}
+                            <dt class="col-7">Optional Riders:</dt>
+                            <dd class="col-5 text-end font-monospace text-primary">+₹{{ quotation.addon_premium|floatformat:2 }}</dd>
+                        {% endif %}
+
+                        <dt class="col-7">Coverage Term:</dt>
+                        <dd class="col-5 text-end">{{ quotation.duration_years }} Year{% if quotation.duration_years > 1 %}s{% endif %}</dd>
+
+                        <dt class="col-7">Valid Until:</dt>
+                        <dd class="col-5 text-end font-monospace">{{ quotation.valid_until|date:"d M Y" }}</dd>
+                    </dl>
+
+                    <!-- Lifecycle Actions -->
+                    {% if quotation.status == 'DRAFT' %}
+                        <form method="post" action="{% url 'quotations:accept' quotation.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary w-100 py-2.5 fw-bold mb-2 shadow-sm">
+                                <i class="bi bi-hand-thumbs-up me-1"></i> Accept Quotation
+                            </button>
+                        </form>
+                        <a href="{% url 'quotations:convert' quotation.id %}" class="btn btn-outline-secondary w-100 py-2 small">
+                            <i class="bi bi-shield-check me-1"></i> Fast-Track Issue Policy
+                        </a>
+                    {% elif quotation.status == 'ACCEPTED' %}
+                        <div class="alert alert-success py-2.5 px-3 small mb-3">
+                            <i class="bi bi-check-circle me-1"></i> You have accepted this quote. Ready to issue your policy!
+                        </div>
+                        <a href="{% url 'quotations:convert' quotation.id %}" class="btn btn-success w-100 py-2.5 fw-bold shadow-sm">
+                            <i class="bi bi-credit-card-2-front me-1"></i> Proceed to Checkout & Issue Policy
+                        </a>
+                    {% elif quotation.status == 'CONVERTED' %}
+                        <div class="alert alert-info py-2 px-3 small mb-0">
+                            <i class="bi bi-info-circle me-1"></i> Converted to policy.
+                            <a href="{% url 'policies:list' %}" class="fw-bold text-decoration-none">View your policies &rarr;</a>
+                        </div>
+                    {% elif quotation.status == 'EXPIRED' %}
+                        <div class="alert alert-danger py-2 px-3 small mb-0">
+                            <i class="bi bi-exclamation-triangle me-1"></i> This quote has expired.
+                            <a href="{% url 'quotations:create' %}" class="fw-bold text-decoration-none">Recalculate new quote &rarr;</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

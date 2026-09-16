@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}500 - Server Error | Nexisure Vehicle Insurance{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-white text-center">
+    <div class="container py-5 max-w-600">
+        <div class="display-1 fw-bold text-warning mb-3">500</div>
+        <h1 class="h3 fw-bold mb-3">System Processing Error</h1>
+        <p class="text-secondary mb-4">
+            An unexpected error occurred while processing your vehicle insurance request. Our operations team has been notified.
+        </p>
+        <a href="{% url 'home' %}" class="nx-btn-primary">
+            <i class="bi bi-arrow-clockwise"></i> Return to Homepage
+        </a>
+    </div>
+</section>
+{% endblock %}

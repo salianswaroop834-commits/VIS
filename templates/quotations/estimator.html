@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+
+{% block title %}Quotation Estimator | Nexisure Vehicle Insurance{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-light">
+    <div class="container py-2" style="max-width: 800px;">
+        <div class="text-center mb-4">
+            <span class="nx-brand-badge mb-2 d-inline-block">Actuarial Pricing Engine</span>
+            <h1 class="h3 fw-bold">Vehicle Premium Estimator</h1>
+            <p class="text-secondary small">Calculate your customized vehicle insurance premium in Indian Rupees (₹) with multi-year discounts</p>
+        </div>
+
+        <div class="card shadow-sm border-0 rounded-3 p-4 p-md-5 bg-white">
+            <form method="post" action="{% url 'quotations:create' %}" id="quotationForm" class="d-flex flex-column gap-4">
+                {% csrf_token %}
+
+                <!-- Vehicle Selection -->
+                <div>
+                    <label class="form-label fw-semibold text-dark mb-1">Select Registered Vehicle</label>
+                    {% if user.is_authenticated and user.is_customer %}
+                        {% if vehicles %}
+                            <select class="form-select" name="vehicle_id" id="quoteVehicleSelect" onchange="autoFillVehicle(this)">
+                                <option value="">-- Choose from your vehicles (or enter IDV manually below) --</option>
+                                {% for v in vehicles %}
+                                    <option value="{{ v.id }}" data-val="{{ v.vehicle_value }}" {% if selected_vehicle_id == v.id|stringformat:'s' %}selected{% endif %}>
+                                        {{ v.make }} {{ v.model }} ({{ v.registration_number }}) — Assessed IDV: ₹{{ v.vehicle_value|floatformat:0 }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text small">Selecting your registered vehicle verifies vehicle details and secures rate locking.</div>
+                        {% else %}
+                            <div class="alert alert-info py-2 px-3 small d-flex justify-content-between align-items-center mb-0">
+                                <span><i class="bi bi-info-circle me-1"></i> No registered vehicles found under your account.</span>
+                                <a href="{% url 'vehicles:create' %}" class="btn btn-sm btn-outline-primary py-0.5 px-2">Register Vehicle</a>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-light border py-2 px-3 small mb-0">
+                            <i class="bi bi-shield-lock me-1"></i> <a href="{% url 'accounts:login' %}?next={% url 'quotations:create' %}">Sign in</a> to quote directly against your saved vehicle records.
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Insured Declared Value (IDV in INR) -->
+                <div>
+                    <label class="form-label fw-semibold text-dark mb-1">
+                        Insured Declared Value (IDV)
+                        <span class="badge bg-secondary-subtle text-secondary ms-1">INR (₹)</span>
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light fw-bold">₹</span>
+                        <input type="number" class="form-control font-monospace fs-5" name="vehicle_value" id="estIDV" value="{{ prefill_value|default:'500000' }}" min="50000" step="10000" required>
+                    </div>
+                    <div class="form-text small">Total sum insured covering vehicle loss, theft, or irreparable collision damage.</div>
+                </div>
+
+                <!-- Coverage Plan Tier -->
+                <div>
+                    <label class="form-label fw-semibold text-dark mb-1">Coverage Plan Tier</label>
+                    <select class="form-select" name="coverage_plan" id="coveragePlanSelect" onchange="updateRidersVisibility(this.value)">
+                        {% for plan in plans %}
+                            <option value="{{ plan.plan_code }}" {% if selected_plan == plan.plan_code %}selected{% endif %}>
+                                {{ plan.name }} (Base Rate: {{ plan.base_rate_percentage }}% | Deductible: ₹{{ plan.standard_deductible|floatformat:0 }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Optional Add-on Riders -->
+                <div>
+                    <label class="form-label fw-semibold text-dark mb-1">Optional Add-on Riders</label>
+                    <div class="card bg-light border-0 p-3 rounded-3">
+                        <div id="ridersContainer">
+                            {% for plan in plans %}
+                                <div class="plan-riders-group" id="riders-{{ plan.plan_code }}" style="{% if selected_plan != plan.plan_code %}display: none;{% endif %}">
+                                    {% for feat in plan.features.all %}
+                                        {% if not feat.is_standard %}
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input" type="checkbox" name="selected_features" value="{{ feat.id }}" id="feat_{{ feat.id }}">
+                                                <label class="form-check-label small" for="feat_{{ feat.id }}">
+                                                    <strong>{{ feat.title }}</strong>
+                                                    <span class="badge bg-primary-subtle text-primary border ms-1">+₹{{ feat.add_on_premium|floatformat:0 }}/year</span>
+                                                    {% if feat.description %}
+                                                        <div class="text-muted" style="font-size: 0.8rem;">{{ feat.description }}</div>
+                                                    {% endif %}
+                                                </label>
+                                            </div>
+                                        {% endif %}
+                                    {% empty %}
+                                        <p class="text-muted small mb-0">No optional riders available for this plan.</p>
+                                    {% endfor %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Policy Duration / Multi-Year Term -->
+                <div>
+                    <label class="form-label fw-semibold text-dark mb-1">Policy Term</label>
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <label class="card h-100 border p-3 rounded-3 cursor-pointer text-center">
+                                <input class="form-check-input mx-auto mb-2" type="radio" name="duration_years" value="1" checked>
+                                <span class="fw-bold small">1 Year</span>
+                                <span class="text-muted small" style="font-size: 0.75rem;">Standard Term</span>
+                            </label>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="card h-100 border p-3 rounded-3 cursor-pointer text-center border-primary">
+                                <input class="form-check-input mx-auto mb-2" type="radio" name="duration_years" value="2">
+                                <span class="fw-bold small">2 Years</span>
+                                <span class="badge bg-success-subtle text-success small" style="font-size: 0.72rem;">5% Term Discount</span>
+                            </label>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="card h-100 border p-3 rounded-3 cursor-pointer text-center">
+                                <input class="form-check-input mx-auto mb-2" type="radio" name="duration_years" value="3">
+                                <span class="fw-bold small">3 Years</span>
+                                <span class="badge bg-success-subtle text-success small" style="font-size: 0.72rem;">10% Term Discount</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" class="btn btn-primary w-100 py-3 fw-bold fs-6 shadow-sm">
+                        <i class="bi bi-file-earmark-plus me-1"></i> Generate Official Quotation Draft
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function autoFillVehicle(selectEl) {
+    const selectedOption = selectEl.options[selectEl.selectedIndex];
+    const val = selectedOption.getAttribute('data-val');
+    if (val) {
+        document.getElementById('estIDV').value = Math.round(parseFloat(val));
+    }
+}
+
+function updateRidersVisibility(planCode) {
+    document.querySelectorAll('.plan-riders-group').forEach(el => {
+        el.style.display = 'none';
+    });
+    const targetGroup = document.getElementById('riders-' + planCode);
+    if (targetGroup) {
+        targetGroup.style.display = 'block';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const planSelect = document.getElementById('coveragePlanSelect');
+    if (planSelect) {
+        updateRidersVisibility(planSelect.value);
+    }
+});
+</script>
+{% endblock %}

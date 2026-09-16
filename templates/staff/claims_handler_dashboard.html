@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+
+{% block title %}Claims Handler Desk | Nexisure Operations{% endblock %}
+
+{% block content %}
+<section class="py-4 bg-light border-bottom">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <span class="badge bg-warning text-dark mb-1">Claims Handling Operations</span>
+                <h1 class="h3 fw-bold mb-0">Claims Queue & Adjudication Desk</h1>
+                <div class="text-secondary small mt-1">
+                    Handler: <strong>{{ staff.user.get_full_name|default:user.email }}</strong> | 
+                    Authority Approval Limit: <strong class="text-success">₹{{ approval_limit|floatformat:2 }}</strong>
+                </div>
+            </div>
+            <a href="{% url 'claims:queue' %}" class="nx-btn-primary py-2 small">
+                <i class="bi bi-inbox-fill me-1"></i> Open Shared Queue ({{ pending_count }})
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="py-5 bg-white">
+    <div class="container py-2">
+        <!-- Responsible AI Disclaimer Banner -->
+        <div class="alert alert-warning d-flex align-items-center gap-3 mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-4 text-warning"></i>
+            <div class="small">
+                <strong>Responsible AI Decision-Support Protocol:</strong>
+                Machine learning risk probability and estimated severity indicators are decision-support signals only. Human claims handlers maintain sole legal and operational authority to approve settlements or issue rejections.
+            </div>
+        </div>
+
+        <!-- Operational KPIs -->
+        <div class="row g-3 mb-5">
+            <div class="col-md-3 col-6">
+                <div class="nx-kpi-card shadow-sm border-start border-warning border-4">
+                    <div>
+                        <div class="nx-kpi-value text-warning">{{ pending_count }}</div>
+                        <div class="nx-kpi-label">Pending in Shared Queue</div>
+                    </div>
+                    <i class="bi bi-inbox text-warning fs-2"></i>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="nx-kpi-card shadow-sm border-start border-primary border-4">
+                    <div>
+                        <div class="nx-kpi-value text-primary">{{ in_review_count }}</div>
+                        <div class="nx-kpi-label">Assigned to Me (In Review)</div>
+                    </div>
+                    <i class="bi bi-person-check text-primary fs-2"></i>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="nx-kpi-card shadow-sm border-start border-success border-4">
+                    <div>
+                        <div class="nx-kpi-value text-success">{{ decided_count }}</div>
+                        <div class="nx-kpi-label">Decided by Me</div>
+                    </div>
+                    <i class="bi bi-check2-circle text-success fs-2"></i>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="nx-kpi-card shadow-sm border-start border-info border-4">
+                    <div>
+                        <div class="nx-kpi-value">₹{{ approval_limit|floatformat:0 }} <span class="d-none">${{ approval_limit|floatformat:0 }}</span></div>
+                        <div class="nx-kpi-label">Single Claim Limit</div>
+                    </div>
+                    <i class="bi bi-shield-lock text-info fs-2"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- In-Review Claims Table -->
+        <div class="nx-card shadow-sm p-4 mb-5 border">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="h5 fw-bold mb-0">My In-Review Claims ({{ in_review_count }})</h4>
+                <span class="badge bg-warning text-dark">Active Workload</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle small mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Claim ID</th>
+                            <th>Policy / Vehicle</th>
+                            <th>Customer</th>
+                            <th>Incident Date</th>
+                            <th>Claimed Amount</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in my_review_claims %}
+                        <tr>
+                            <td class="fw-bold font-monospace text-primary">
+                                <a href="{% url 'claims:detail' c.id %}" class="text-decoration-none">{{ c.claim_number }}</a>
+                            </td>
+                            <td>{{ c.policy.policy_number }} ({{ c.policy.vehicle.registration_number }})</td>
+                            <td>{{ c.policy.customer.user.email }}</td>
+                            <td>{{ c.incident_date|date:"Y-m-d" }}</td>
+                            <td class="fw-bold">₹{{ c.estimated_loss_amount|floatformat:2 }}</td>
+                            <td><span class="badge bg-warning text-dark">IN_REVIEW</span></td>
+                            <td>
+                                <a href="{% url 'claims:detail' c.id %}" class="btn btn-sm btn-primary py-1">Adjudicate &rarr;</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                You currently have no in-review claims assigned. Pick up new claims from the shared queue.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pending Shared Queue Preview -->
+        <div class="nx-card shadow-sm p-4 border">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="h5 fw-bold mb-0">Shared Unassigned Queue ({{ pending_count }})</h4>
+                <a href="{% url 'claims:queue' %}" class="small text-primary text-decoration-none">Open Shared Queue &rarr;</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle small mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Claim ID</th>
+                            <th>Policy Number</th>
+                            <th>Vehicle Plate</th>
+                            <th>Filed At</th>
+                            <th>Estimated Loss</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in pending_claims %}
+                        <tr>
+                            <td class="fw-bold font-monospace text-primary">{{ c.claim_number }}</td>
+                            <td>{{ c.policy.policy_number }}</td>
+                            <td>{{ c.policy.vehicle.registration_number }}</td>
+                            <td>{{ c.created_at|date:"M d, H:i" }}</td>
+                            <td>₹{{ c.estimated_loss_amount|floatformat:2 }}</td>
+                            <td>
+                                <a href="{% url 'claims:detail' c.id %}" class="btn btn-sm btn-outline-primary py-0">Inspect</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-3 text-muted">
+                                Shared queue is empty. No claims awaiting assignment.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}Register Customer Account | Nexisure Vehicle Insurance{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-white">
+    <div class="container py-4 max-w-500">
+        <div class="text-center mb-4">
+            <span class="nx-brand-badge mb-2 d-inline-block">Customer Registration</span>
+            <h1 class="h3 fw-bold">Create Nexisure Account</h1>
+            <p class="text-secondary small">Start protecting your vehicles with intelligent insurance</p>
+        </div>
+
+        <div class="nx-card shadow-sm p-4">
+            <form method="post" action="{% url 'accounts:register' %}">
+                {% csrf_token %}
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label fw-semibold text-secondary small">First Name</label>
+                        <input type="text" class="form-control" name="first_name" required placeholder="Alex">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-semibold text-secondary small">Last Name</label>
+                        <input type="text" class="form-control" name="last_name" required placeholder="Morgan">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary small">Email Address</label>
+                    <input type="email" class="form-control" name="email" required placeholder="alex.morgan@example.com">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary small">Phone Number</label>
+                    <input type="tel" class="form-control" name="phone_number" placeholder="+1 555 019 2834">
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold text-secondary small">Create Password</label>
+                    <input type="password" class="form-control" name="password" required placeholder="••••••••">
+                    <small class="text-muted">Minimum 8 characters with letters & numbers</small>
+                </div>
+
+                <button type="submit" class="nx-btn-primary w-100 justify-content-center py-2.5">
+                    <i class="bi bi-person-plus-fill"></i> Complete Registration
+                </button>
+            </form>
+
+            <hr class="my-4">
+
+            <div class="text-center small text-secondary">
+                Already registered? <a href="{% url 'accounts:login' %}" class="text-primary fw-semibold">Sign In</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

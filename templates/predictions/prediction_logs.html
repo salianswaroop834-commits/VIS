@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}ML Prediction Audit Logs | Nexisure Governance{% endblock %}
+
+{% block content %}
+<section class="py-4 bg-light border-bottom">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <span class="nx-brand-badge mb-1 d-inline-block">Inference Governance</span>
+                <h1 class="h3 fw-bold mb-0">ML Prediction Logs</h1>
+            </div>
+            <a href="{% url 'predictions:live-predict' %}" class="nx-btn-primary py-2 small">
+                <i class="bi bi-play-circle-fill me-1"></i> Live Predictor
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="py-5 bg-white">
+    <div class="container py-2">
+        <div class="nx-card shadow-sm p-4">
+            {% if logs %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle small mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Prediction Type</th>
+                            <th>Model</th>
+                            <th>Probability</th>
+                            <th>Estimated Loss</th>
+                            <th>Latency</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td class="font-monospace text-muted">{{ log.created_at|date:"Y-m-d H:i:s" }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ log.prediction_type }}</span></td>
+                            <td>{{ log.model_version.model_name|default:"ClaimProbabilityPredictor" }}</td>
+                            <td class="fw-semibold">
+                                {% if log.confidence_or_probability %}
+                                    {{ log.confidence_or_probability|floatformat:4 }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.output_result.estimated_severity %}
+                                    ₹{{ log.output_result.estimated_severity|floatformat:2 }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td class="font-monospace text-muted">{{ log.latency_ms|floatformat:1 }}ms</td>
+                            <td>
+                                {% if log.is_successful %}
+                                    <span class="badge bg-success">Success</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Failed</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="p-5 text-center text-secondary">
+                <i class="bi bi-journal-text display-4 text-muted mb-2"></i>
+                <h5 class="fw-bold text-dark">No Prediction Logs Yet</h5>
+                <p class="small text-muted mb-0">Inferences performed via the Live Predictor or API will be recorded here.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

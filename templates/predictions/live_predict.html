@@ -1,0 +1,284 @@
+{% extends 'base.html' %}
+
+{% block title %}Live ML Decision Support | Nexisure Underwriting{% endblock %}
+
+{% block content %}
+<section class="py-4 bg-light border-bottom">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <span class="nx-brand-badge mb-1 d-inline-block">Decision Support Intelligence</span>
+                <h1 class="h3 fw-bold mb-0 text-dark">Live Risk & Claim Severity Predictor</h1>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <a href="{% url 'predictions:models' %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-bezier2 me-1"></i> MLOps Model Registry
+                </a>
+                <a href="{% url 'analytics:dashboard' %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-graph-up me-1"></i> Actuarial Analytics
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-5 bg-white">
+    <div class="container py-1">
+        <!-- 1-Click Scenario Presets Bar -->
+        <div class="card bg-light border mb-4 p-3 rounded-3 shadow-xs">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-lightning-charge-fill text-warning"></i>
+                    <strong class="small text-dark">One-Click Underwriting Profiles (Click to Load):</strong>
+                </div>
+                <small class="text-muted">Simulate heterogeneous actuarial risk profiles instantly</small>
+            </div>
+            <div class="d-flex flex-wrap gap-2 small">
+                <button type="button" class="btn btn-sm btn-outline-success py-1.5 scenario-btn"
+                        data-age="45" data-mileage="8000" data-type="SEDAN" data-fuel="PETROL"
+                        data-usage="PERSONAL" data-credit="EXCELLENT" data-val="32000" data-tier="COMPREHENSIVE"
+                        data-vage="2" data-claims="0">
+                    <i class="bi bi-shield-check me-1"></i> Safe Commuter (Low Risk)
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-primary py-1.5 scenario-btn"
+                        data-age="34" data-mileage="15000" data-type="SUV" data-fuel="DIESEL"
+                        data-usage="PERSONAL" data-credit="GOOD" data-val="40000" data-tier="COMPREHENSIVE"
+                        data-vage="4" data-claims="0">
+                    <i class="bi bi-person me-1"></i> Family SUV (Moderate Risk)
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-warning text-dark py-1.5 scenario-btn"
+                        data-age="21" data-mileage="22000" data-type="HATCHBACK" data-fuel="PETROL"
+                        data-usage="PERSONAL" data-credit="FAIR" data-val="18000" data-tier="COMPREHENSIVE"
+                        data-vage="5" data-claims="1">
+                    <i class="bi bi-exclamation-circle me-1"></i> Young Driver (Elevated Risk)
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger py-1.5 scenario-btn"
+                        data-age="29" data-mileage="40000" data-type="COMMERCIAL_VAN" data-fuel="DIESEL"
+                        data-usage="COMMERCIAL" data-credit="POOR" data-val="26000" data-tier="THIRD_PARTY"
+                        data-vage="7" data-claims="2">
+                    <i class="bi bi-truck me-1"></i> Commercial Delivery Fleet (High Risk)
+                </button>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Left Column: Risk Feature Input Workbench -->
+            <div class="col-lg-6">
+                <div class="nx-card shadow-sm p-4 border">
+                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                        <h5 class="fw-bold mb-0 text-dark">Underwriting Feature Inputs</h5>
+                        <span class="badge bg-primary bg-opacity-10 text-primary small">12 Actuarial Signals</span>
+                    </div>
+
+                    <form method="post" action="{% url 'predictions:live-predict' %}" id="predictionForm">
+                        {% csrf_token %}
+
+                        <!-- Driver Features -->
+                        <div class="mb-3">
+                            <small class="text-uppercase fw-bold text-secondary" style="font-size: 0.72rem;">Driver Demographic & Behavioral Attributes</small>
+                            <div class="row g-2 mt-1">
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold text-secondary mb-1">Driver Age (Years)</label>
+                                    <input type="number" class="form-control form-control-sm" name="driver_age" id="fDriverAge"
+                                           value="{{ input_data.driver_age|default:35 }}" min="18" max="90" required>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold text-secondary mb-1">Annual Mileage</label>
+                                    <input type="number" class="form-control form-control-sm" name="annual_mileage" id="fMileage"
+                                           value="{{ input_data.annual_mileage|default:12000 }}" min="1000" step="500" required>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold text-secondary mb-1">Credit Score Tier</label>
+                                    <select class="form-select form-select-sm" name="credit_score_tier" id="fCredit">
+                                        <option value="EXCELLENT" {% if input_data.credit_score_tier == 'EXCELLENT' %}selected{% endif %}>Excellent (750+)</option>
+                                        <option value="GOOD" {% if not input_data.credit_score_tier or input_data.credit_score_tier == 'GOOD' %}selected{% endif %}>Good (680 - 749)</option>
+                                        <option value="FAIR" {% if input_data.credit_score_tier == 'FAIR' %}selected{% endif %}>Fair (600 - 679)</option>
+                                        <option value="POOR" {% if input_data.credit_score_tier == 'POOR' %}selected{% endif %}>Poor (&lt; 600)</option>
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold text-secondary mb-1">Previous Claims</label>
+                                    <input type="number" class="form-control form-control-sm" name="previous_claims_count" id="fClaims"
+                                           value="{{ input_data.previous_claims_count|default:0 }}" min="0" max="10" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Vehicle & Policy Features -->
+                        <div class="mb-4">
+                            <small class="text-uppercase fw-bold text-secondary" style="font-size: 0.72rem;">Vehicle Asset & Contractual Coverage Attributes</small>
+                            <div class="row g-2 mt-1">
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold text-secondary mb-1">Vehicle Type</label>
+                                    <select class="form-select form-select-sm" name="vehicle_type" id="fVehicleType">
+                                        {% for code, label in vehicle_types %}
+                                        <option value="{{ code }}" {% if input_data.vehicle_type == code %}selected{% endif %}>{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold text-secondary mb-1">Fuel Type</label>
+                                    <select class="form-select form-select-sm" name="fuel_type" id="fFuelType">
+                                        {% for code, label in fuel_types %}
+                                        <option value="{{ code }}" {% if input_data.fuel_type == code %}selected{% endif %}>{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold text-secondary mb-1">Vehicle Age (Years)</label>
+                                    <input type="number" class="form-control form-control-sm" name="vehicle_age" id="fVehicleAge"
+                                           value="{{ input_data.vehicle_age|default:3 }}" min="0" max="25" required>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold text-secondary mb-1">Vehicle IDV (₹)</label>
+                                    <input type="number" class="form-control form-control-sm" name="vehicle_value" id="fVehicleValue"
+                                           value="{{ input_data.vehicle_value|default:25000 }}" min="1000" step="500" required>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold text-secondary mb-1">Usage Type</label>
+                                    <select class="form-select form-select-sm" name="usage_type" id="fUsage">
+                                        {% for code, label in usage_types %}
+                                        <option value="{{ code }}" {% if input_data.usage_type == code %}selected{% endif %}>{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold text-secondary mb-1">Coverage Tier</label>
+                                    <select class="form-select form-select-sm" name="coverage_tier" id="fTier">
+                                        {% for code, label in coverage_tiers %}
+                                        <option value="{{ code }}" {% if input_data.coverage_tier == code %}selected{% endif %}>{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="nx-btn-primary w-100 justify-content-center py-2.5 shadow-sm">
+                            <i class="bi bi-cpu me-1"></i>
+                            <span>Generate Underwriting Assessment</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right Column: Live Decision Support Output -->
+            <div class="col-lg-6">
+                {% if result %}
+                <div class="nx-card shadow-sm p-4 border bg-white h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <!-- Header & Risk Band Pill -->
+                        <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                            <h5 class="fw-bold mb-0 text-dark">ML Risk Evaluation Output</h5>
+                            <span class="badge {% if result.risk_tier == 'LOW' %}bg-success{% elif result.risk_tier == 'MODERATE' %}bg-primary{% elif result.risk_tier == 'ELEVATED' %}bg-warning text-dark{% else %}bg-danger{% endif %} px-3 py-1.5 fw-bold">
+                                Risk Tier: {{ result.risk_tier }}
+                            </span>
+                        </div>
+
+                        <!-- Metrics Grid -->
+                        <div class="row g-3 mb-4">
+                            <!-- Metric 1: Claim Probability -->
+                            <div class="col-6">
+                                <div class="p-3 bg-light rounded-3 border">
+                                    <small class="text-muted text-uppercase fw-bold" style="font-size: 0.68rem;">Predicted Claim Probability</small>
+                                    <div class="fs-2 fw-bolder text-primary font-monospace my-1">
+                                        {{ result.claim_probability_pct|floatformat:1 }}%
+                                    </div>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar {% if result.risk_tier == 'LOW' %}bg-success{% elif result.risk_tier == 'MODERATE' %}bg-primary{% elif result.risk_tier == 'ELEVATED' %}bg-warning{% else %}bg-danger{% endif %}"
+                                             role="progressbar" style="width: {{ result.claim_probability_pct }}%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Metric 2: Estimated Severity -->
+                            <div class="col-6">
+                                <div class="p-3 bg-light rounded-3 border">
+                                    <small class="text-muted text-uppercase fw-bold" style="font-size: 0.68rem;">Estimated Severity</small>
+                                    <div class="fs-2 fw-bolder text-dark font-monospace my-1">
+                                        ₹{{ result.estimated_severity|floatformat:2 }}
+                                    </div>
+                                    <small class="text-muted" style="font-size: 0.72rem;">Bounded by vehicle IDV</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recommendation Decision Card -->
+                        {% if recommendation %}
+                        <div class="p-3 rounded-3 mb-3 border {% if result.risk_tier == 'HIGH' %}border-danger bg-danger bg-opacity-10{% elif result.risk_tier == 'ELEVATED' %}border-warning bg-warning bg-opacity-10{% else %}border-success bg-success bg-opacity-10{% endif %}">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <i class="bi {% if result.risk_tier == 'HIGH' %}bi-shield-exclamation text-danger{% elif result.risk_tier == 'ELEVATED' %}bi-exclamation-triangle text-warning{% else %}bi-shield-check text-success{% endif %} fs-5"></i>
+                                <strong class="small text-dark">Rule-Augmented Recommendation:</strong>
+                            </div>
+                            <div class="text-dark small lh-base mb-2">
+                                {{ recommendation.rationale }}
+                            </div>
+                            <div class="d-flex flex-wrap gap-2 pt-1 border-top border-secondary border-opacity-10 small">
+                                <span class="badge bg-white text-dark border">Recommended Plan: {{ recommendation.primary_plan.name }}</span>
+                                <span class="badge bg-white text-dark border">Confidence: {{ recommendation.confidence_score|floatformat:0 }}%</span>
+                                <span class="badge bg-white text-dark border">Recommended Deductible: ₹{{ result.recommended_deductible|floatformat:0 }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Production Explainability & Responsible AI Notice -->
+                        <div class="p-2.5 rounded bg-light border text-secondary small" style="font-size: 0.78rem;">
+                            <i class="bi bi-info-circle-fill text-primary me-1"></i>
+                            <em><strong>RESPONSIBLE AI NOTICE:</strong> {{ result.disclaimer|default:"This evaluation is an automated statistical signal intended strictly for underwriting decision support." }}</em>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-3">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.print();">
+                            <i class="bi bi-printer me-1"></i> Print Underwriting Sheet
+                        </button>
+                        <a href="{% url 'quotations:estimator' %}?vehicle_value={{ input_data.vehicle_value|default:25000 }}&plan={{ input_data.coverage_tier|default:'COMPREHENSIVE' }}" class="nx-btn-primary py-1.5 px-3 small">
+                            <span>Proceed to Issue Quote</span>
+                            <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="nx-card shadow-sm p-5 border bg-light h-100 d-flex flex-column justify-content-center align-items-center text-center">
+                    <div class="nx-icon-box nx-icon-blue mb-3" style="width: 60px; height: 60px; font-size: 1.8rem;">
+                        <i class="bi bi-cpu"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">Awaiting Assessment Inputs</h5>
+                    <p class="text-secondary small mb-4" style="max-width: 380px;">
+                        Configure vehicle and driver parameters on the left or select a 1-click scenario preset above to compute real-time claim probability and severity metrics.
+                    </p>
+                    <div class="d-flex gap-2">
+                        <span class="badge bg-white text-dark border px-3 py-1.5"><i class="bi bi-check2 text-success me-1"></i>Classifier: GBDT</span>
+                        <span class="badge bg-white text-dark border px-3 py-1.5"><i class="bi bi-check2 text-success me-1"></i>Regressor: RF</span>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.scenario-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.getElementById('fDriverAge').value = this.dataset.age;
+            document.getElementById('fMileage').value = this.dataset.mileage;
+            document.getElementById('fVehicleType').value = this.dataset.type;
+            document.getElementById('fFuelType').value = this.dataset.fuel;
+            document.getElementById('fUsage').value = this.dataset.usage;
+            document.getElementById('fCredit').value = this.dataset.credit;
+            document.getElementById('fVehicleValue').value = this.dataset.val;
+            document.getElementById('fTier').value = this.dataset.tier;
+            document.getElementById('fVehicleAge').value = this.dataset.vage;
+            document.getElementById('fClaims').value = this.dataset.claims;
+
+            // Highlight button temporarily
+            document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Shared Claims Queue | Nexisure Operations{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-white">
+    <div class="container py-2">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <span class="badge bg-warning text-dark mb-1">Shared Queue</span>
+                <h1 class="h3 fw-bold mb-0">Pending Claims Waiting for Assignment</h1>
+            </div>
+            <span class="text-secondary small">Claims are assigned exclusively via self-pickup by authorized handlers</span>
+        </div>
+
+        <div class="nx-card shadow-sm p-4">
+            {% if claims %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle small mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Claim ID</th>
+                            <th>Policy Number</th>
+                            <th>Customer</th>
+                            <th>Vehicle</th>
+                            <th>Incident Date</th>
+                            <th>Estimated Loss</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in claims %}
+                        <tr>
+                            <td class="font-monospace fw-bold text-primary">
+                                <a href="{% url 'claims:detail' c.pk %}" class="text-decoration-none">{{ c.claim_number }}</a>
+                            </td>
+                            <td class="font-monospace small">{{ c.policy.policy_number }}</td>
+                            <td>{{ c.customer.user.get_full_name|default:c.customer.user.username }}</td>
+                            <td>{{ c.policy.vehicle.make }} {{ c.policy.vehicle.model }} ({{ c.policy.vehicle.registration_number }})</td>
+                            <td>{{ c.incident_date|date:"M d, Y H:i" }}</td>
+                            <td class="fw-semibold">₹{{ c.estimated_loss_amount|floatformat:2 }}</td>
+                            <td><span class="badge bg-secondary">{{ c.status }}</span></td>
+                            <td>
+                                <form method="post" action="{% url 'claims:self-assign' c.pk %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-primary py-1 px-3">
+                                        <i class="bi bi-hand-index-thumb"></i> Pick Up
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="p-5 text-center text-secondary">
+                <i class="bi bi-check-circle display-4 text-success mb-3"></i>
+                <h4 class="h5 fw-bold text-dark">Queue Clear</h4>
+                <p class="small text-muted mb-0">There are no unassigned pending claims at this moment.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

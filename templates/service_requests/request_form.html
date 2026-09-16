@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}New Policy Service Request | Nexisure{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-white">
+    <div class="container py-2 max-w-700">
+        <div class="text-center mb-4">
+            <span class="nx-brand-badge mb-2 d-inline-block">Customer Support</span>
+            <h1 class="h3 fw-bold">Submit Policy Service Request</h1>
+            <p class="text-secondary small">Request renewals, endorsements, address updates, or policy documentation</p>
+        </div>
+
+        <div class="nx-card shadow-sm p-4 p-md-5">
+            <form method="post" action="{% url 'service_requests:create' %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary small">Request Type <span class="text-danger">*</span></label>
+                    <select class="form-select" name="request_type" required>
+                        <option value="">-- Select Servicing Category --</option>
+                        {% for code, label in request_types %}
+                        <option value="{{ code }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary small">Associated Active Policy (Optional)</label>
+                    <select class="form-select" name="policy_id">
+                        <option value="">-- None / General Request --</option>
+                        {% for p in policies %}
+                        <option value="{{ p.id }}">{{ p.policy_number }} - {{ p.vehicle.make }} {{ p.vehicle.model }} ({{ p.vehicle.registration_number }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary small">Request Subject / Title <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" name="title" required placeholder="e.g. Update registered garaging address">
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold text-secondary small">Details / Description <span class="text-danger">*</span></label>
+                    <textarea class="form-control" name="description" rows="5" required placeholder="Please provide specific details regarding your requested policy amendment or inquiry..."></textarea>
+                </div>
+
+                <button type="submit" class="nx-btn-primary w-100 justify-content-center py-2.5">
+                    <i class="bi bi-send-fill me-1"></i> Submit Service Request
+                </button>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

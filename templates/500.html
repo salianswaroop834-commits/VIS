@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block title %}500 - Internal Service Error | Nexisure Vehicle Insurance{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-white text-center flex-grow-1 d-flex align-items-center">
+    <div class="container py-5" style="max-width: 650px;">
+        <div class="nx-icon-box nx-icon-rose mx-auto mb-3" style="width: 72px; height: 72px; font-size: 2.2rem;">
+            <i class="bi bi-shield-slash"></i>
+        </div>
+        <div class="display-1 fw-bolder text-danger mb-2 font-monospace">500</div>
+        <h1 class="h3 fw-bold mb-3 text-dark">Temporary Service Interruption</h1>
+        <p class="text-secondary mb-4 lh-base">
+            An unexpected error occurred while processing your request. Our system compliance monitor has logged this incident. Please try again shortly.
+        </p>
+        <div class="d-flex justify-content-center gap-3">
+            <a href="{% url 'home' %}" class="nx-btn-primary py-2 px-4">
+                <i class="bi bi-house-door-fill"></i> Return Home
+            </a>
+            <a href="{% url 'contact' %}" class="nx-btn-outline py-2 px-4">
+                <i class="bi bi-envelope"></i> Contact Support
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}

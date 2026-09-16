@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Audit Event Details | Nexisure Operations{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-white">
+    <div class="container py-2 max-w-800">
+        <div class="mb-4">
+            <a href="{% url 'audit:list' %}" class="text-decoration-none text-secondary small">
+                <i class="bi bi-arrow-left"></i> Back to Audit Log
+            </a>
+            <h1 class="h3 fw-bold mt-1">Audit Entry: <span class="font-monospace text-primary">{{ log.action }}</span></h1>
+            <p class="text-secondary small">Immutable compliance record ID: <span class="font-monospace">{{ log.id }}</span></p>
+        </div>
+
+        <div class="nx-card shadow-sm p-4 mb-4">
+            <h5 class="fw-bold mb-3 border-bottom pb-2">Event Metadata</h5>
+            <dl class="row small mb-0">
+                <dt class="col-sm-4 text-muted">Timestamp:</dt>
+                <dd class="col-sm-8 font-monospace">{{ log.created_at|date:"Y-m-d H:i:s T" }}</dd>
+
+                <dt class="col-sm-4 text-muted">Actor Email:</dt>
+                <dd class="col-sm-8 fw-semibold">{{ log.actor_email|default:"System Engine" }}</dd>
+
+                <dt class="col-sm-4 text-muted">Actor Role:</dt>
+                <dd class="col-sm-8"><span class="badge bg-secondary">{{ log.actor_role }}</span></dd>
+
+                <dt class="col-sm-4 text-muted">Target Entity:</dt>
+                <dd class="col-sm-8 fw-semibold">{{ log.target_entity }}</dd>
+
+                <dt class="col-sm-4 text-muted">Target Record ID:</dt>
+                <dd class="col-sm-8 font-monospace">{{ log.target_id }}</dd>
+
+                <dt class="col-sm-4 text-muted">Client IP Address:</dt>
+                <dd class="col-sm-8 font-monospace">{{ log.ip_address|default:"Internal / Direct" }}</dd>
+
+                <dt class="col-sm-4 text-muted">Execution Status:</dt>
+                <dd class="col-sm-8">
+                    {% if log.is_success %}
+                        <span class="badge bg-success">Success</span>
+                    {% else %}
+                        <span class="badge bg-danger">Failed</span>
+                    {% endif %}
+                </dd>
+            </dl>
+        </div>
+
+        <div class="nx-card shadow-sm p-4">
+            <h5 class="fw-bold mb-3 border-bottom pb-2">Payload Details</h5>
+            <div class="bg-light p-3 rounded font-monospace small">
+                <pre class="mb-0 text-dark">{{ log.details|pprint }}</pre>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ doc.title }} | Nexisure Knowledge Base{% endblock %}
+
+{% block content %}
+<section class="py-4 bg-light border-bottom">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <a href="{% url 'rag:list' %}" class="text-decoration-none small text-secondary">
+                    &larr; Back to Knowledge Documents
+                </a>
+                <h1 class="h3 fw-bold mb-1 mt-1">{{ doc.title }}</h1>
+                <span class="badge bg-primary me-2">{{ doc.get_category_display }}</span>
+                <span class="badge bg-secondary">Version {{ doc.version }}</span>
+            </div>
+            <a href="{% url 'rag:search' %}" class="nx-btn-primary py-2 small">
+                <i class="bi bi-search me-1"></i> Search Policy
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="py-5 bg-white">
+    <div class="container py-2">
+        <div class="row g-4">
+            <!-- Left: Document Chunks -->
+            <div class="col-lg-8">
+                <h4 class="h5 fw-bold mb-3">Segmented Semantic Chunks ({{ chunks|length }})</h4>
+                {% for chunk in chunks %}
+                <div class="nx-card shadow-sm p-4 mb-3 border">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-light text-dark border">Section #{{ chunk.chunk_index }}</span>
+                        <span class="text-muted small">{{ chunk.token_count }} words &bull; 384-dim normalized</span>
+                    </div>
+                    <div class="text-dark small lh-lg" style="white-space: pre-line;">
+                        {{ chunk.content }}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="p-4 text-center text-muted nx-card">No chunks generated.</div>
+                {% endfor %}
+            </div>
+
+            <!-- Right: Metadata & Document Information -->
+            <div class="col-lg-4">
+                <div class="nx-card shadow-sm p-4 border sticky-top" style="top: 2rem;">
+                    <h5 class="fw-bold mb-3">Document Governance</h5>
+                    <ul class="list-unstyled small mb-4">
+                        <li class="mb-2"><strong>Category:</strong> {{ doc.get_category_display }}</li>
+                        <li class="mb-2"><strong>Version:</strong> {{ doc.version }}</li>
+                        <li class="mb-2"><strong>Status:</strong> 
+                            {% if doc.is_approved_for_rag %}
+                            <span class="text-success fw-bold">Approved for RAG</span>
+                            {% else %}
+                            <span class="text-warning fw-bold">Draft</span>
+                            {% endif %}
+                        </li>
+                        <li class="mb-2"><strong>Source File:</strong> <span class="font-monospace text-break">{{ doc.source_reference }}</span></li>
+                        <li class="mb-2"><strong>Last Updated:</strong> {{ doc.updated_at|date:"M d, Y H:i" }}</li>
+                    </ul>
+
+                    <div class="alert alert-info py-2 px-3 small mb-0">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Chunks in this document are automatically indexed for conversational retrieval and underwriter assistance.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

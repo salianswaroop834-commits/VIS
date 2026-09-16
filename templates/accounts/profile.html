@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}User Profile | Nexisure Vehicle Insurance{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-white">
+    <div class="container py-4 max-w-700">
+        <h1 class="h3 fw-bold mb-4">Account Profile</h1>
+        <div class="nx-card shadow-sm p-4">
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <div class="nx-icon-box nx-icon-blue mb-0">
+                    <i class="bi bi-person-circle fs-3"></i>
+                </div>
+                <div>
+                    <h4 class="h5 fw-bold mb-0">{{ user.email }}</h4>
+                    <span class="badge bg-primary mt-1">{{ user.get_role_display }}</span>
+                    <span class="badge {% if user.email_verified %}bg-success{% else %}bg-warning text-dark{% endif %} mt-1">
+                        {% if user.email_verified %}Verified{% else %}Unverified{% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <dl class="row mb-0 small">
+                <dt class="col-sm-4 text-secondary">User ID (UUID):</dt>
+                <dd class="col-sm-8 font-monospace">{{ user.id }}</dd>
+
+                <dt class="col-sm-4 text-secondary">Registered Date:</dt>
+                <dd class="col-sm-8">{{ user.created_at|date:"F d, Y H:i" }}</dd>
+
+                <dt class="col-sm-4 text-secondary">Supabase UID:</dt>
+                <dd class="col-sm-8 font-monospace">{{ user.supabase_uid|default:"Synchronized via Phase 2" }}</dd>
+            </dl>
+        </div>
+    </div>
+</section>
+{% endblock %}

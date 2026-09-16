@@ -1,0 +1,481 @@
+{% extends 'base.html' %}
+
+{% block title %}Nexisure Vehicle Insurance | Intelligent & Responsible Protection{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="nx-hero-section">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-7">
+                <!-- Status Badge -->
+                <div class="d-inline-flex align-items-center gap-2 px-3 py-1.5 rounded-pill bg-white border border-primary border-opacity-20 shadow-xs mb-3">
+                    <span class="badge rounded-pill bg-primary px-2.5 py-1">Enterprise Grade</span>
+                    <span class="text-secondary small fw-semibold">Responsible ML &bull; Grounded RAG &bull; Zero-Trust Audit</span>
+                </div>
+
+                <h1 class="nx-hero-title">
+                    Intelligent Vehicle Protection. <br>
+                    <span class="nx-gradient-text">Responsible AI Decision Support.</span>
+                </h1>
+
+                <p class="nx-hero-subtitle">
+                    Transforming auto insurance through transparent pricing, dual-model risk scoring, contractual RAG guidance, and human-in-the-loop claims adjudication.
+                </p>
+
+                <!-- Call to Action Buttons -->
+                <div class="d-flex flex-wrap gap-3 mb-4">
+                    <a href="{% url 'quotations:estimator' %}" class="nx-btn-primary py-2.5 px-4 fs-6">
+                        <i class="bi bi-shield-plus fs-5"></i>
+                        <span>Calculate Instant Quote</span>
+                    </a>
+                    <a href="{% url 'chatbot:chat' %}" class="nx-btn-outline py-2.5 px-4 fs-6">
+                        <i class="bi bi-robot fs-5 text-primary"></i>
+                        <span>Launch AI Assistant</span>
+                    </a>
+                </div>
+
+                <!-- Trust Points -->
+                <div class="d-flex flex-wrap align-items-center gap-4 text-secondary small pt-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-check-circle-fill text-success fs-6"></i>
+                        <span class="fw-medium">Luhn-Verified Payments</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-check-circle-fill text-success fs-6"></i>
+                        <span class="fw-medium">Human Authority Floor (₹5,000)</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-check-circle-fill text-success fs-6"></i>
+                        <span class="fw-medium">pgvector Contract Grounding</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Live Mini-Quote Calculator -->
+            <div class="col-lg-5">
+                <div class="nx-card nx-card-highlight shadow-lg border-2">
+                    <div class="nx-card-badge">Live Calculator</div>
+                    
+                    <div class="d-flex align-items-center gap-2.5 mb-3">
+                        <div class="nx-icon-box nx-icon-blue mb-0" style="width: 44px; height: 44px; font-size: 1.25rem;">
+                            <i class="bi bi-calculator-fill"></i>
+                        </div>
+                        <div>
+                            <h3 class="h5 mb-0 fw-bold text-dark">Instant Premium Simulator</h3>
+                            <small class="text-muted">Dynamic actuarial calculation in real time</small>
+                        </div>
+                    </div>
+
+                    <!-- Live Calculator Controls -->
+                    <div class="d-flex flex-column gap-3">
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label small fw-semibold text-secondary mb-0">Vehicle Declared Value (IDV)</label>
+                                <span class="fw-bold text-primary font-monospace" id="displayVehicleValue">₹28,000</span>
+                            </div>
+                            <input type="range" class="form-range" id="sliderVehicleValue" min="5000" max="85000" step="1000" value="28000">
+                            <div class="d-flex justify-content-between text-muted" style="font-size: 0.72rem;">
+                                <span>₹5,000</span>
+                                <span>₹45,000</span>
+                                <span>₹85,000</span>
+                            </div>
+                        </div>
+
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold text-secondary mb-1">Vehicle Type</label>
+                                <select class="form-select form-select-sm" id="calcVehicleType">
+                                    <option value="SEDAN" selected>Sedan</option>
+                                    <option value="SUV">SUV / Crossover</option>
+                                    <option value="HATCHBACK">Hatchback</option>
+                                    <option value="COMMERCIAL">Commercial</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold text-secondary mb-1">Term Duration</label>
+                                <select class="form-select form-select-sm" id="calcDuration">
+                                    <option value="1" selected>1 Year</option>
+                                    <option value="2">2 Years (5% off)</option>
+                                    <option value="3">3 Years (10% off)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="form-label small fw-semibold text-secondary mb-1">Coverage Tier</label>
+                            <div class="d-flex gap-2">
+                                <input type="radio" class="btn-check" name="planRadio" id="planTP" value="THIRD_PARTY">
+                                <label class="btn btn-sm btn-outline-primary py-1.5" for="planTP">Third-Party</label>
+
+                                <input type="radio" class="btn-check" name="planRadio" id="planComp" value="COMPREHENSIVE" checked>
+                                <label class="btn btn-sm btn-outline-primary py-1.5 fw-bold" for="planComp">Comprehensive</label>
+
+                                <input type="radio" class="btn-check" name="planRadio" id="planZero" value="ZERO_DEP_PREMIUM">
+                                <label class="btn btn-sm btn-outline-primary py-1.5" for="planZero">Zero-Dep</label>
+                            </div>
+                        </div>
+
+                        <!-- Live Estimated Premium Result Banner -->
+                        <div class="p-3 bg-light rounded-3 border d-flex justify-content-between align-items-center mt-1">
+                            <div>
+                                <small class="text-muted text-uppercase fw-bold" style="font-size: 0.72rem;">Estimated Premium</small>
+                                <div class="text-success small fw-semibold"><i class="bi bi-shield-check me-1"></i>Standard Deductible: ₹1,000</div>
+                            </div>
+                            <div class="text-end">
+                                <div class="fs-3 fw-bolder text-primary font-monospace" id="calcOutputPremium">₹798.00</div>
+                                <small class="text-muted" style="font-size: 0.72rem;">annualized rate</small>
+                            </div>
+                        </div>
+
+                        <a href="{% url 'quotations:estimator' %}" id="calcQuoteBtn" class="nx-btn-primary w-100 justify-content-center py-2.5">
+                            <span>Proceed to Official Quotation</span>
+                            <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Institutional Proof & KPI Bar -->
+<section class="py-4 bg-white border-bottom">
+    <div class="container">
+        <div class="row g-4 text-center">
+            <div class="col-6 col-md-3">
+                <div class="p-2">
+                    <div class="nx-kpi-value">7,500+</div>
+                    <div class="nx-kpi-label">Actuarial Training Records</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-2">
+                    <div class="nx-kpi-value text-success">100%</div>
+                    <div class="nx-kpi-label">Audited Decision Trail</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-2">
+                    <div class="nx-kpi-value text-info">₹5,000</div>
+                    <div class="nx-kpi-label">Handler Discretion Limit</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-2">
+                    <div class="nx-kpi-value text-primary">&lt; 150ms</div>
+                    <div class="nx-kpi-label">ML Risk Inference Latency</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Coverage Plans Comparison Matrix -->
+<section class="py-5 bg-light">
+    <div class="container py-3">
+        <div class="text-center max-w-700 mx-auto mb-5">
+            <span class="badge bg-primary bg-opacity-10 text-primary fw-bold text-uppercase px-3 py-1.5 rounded-pill mb-2">Transparent Coverage</span>
+            <h2 class="h1 fw-bold mb-2">Choose the Protection You Need</h2>
+            <p class="text-secondary mb-0">Three actuarially balanced tiers designed for compliance, peace of mind, and full vehicle restoration.</p>
+        </div>
+
+        <div class="row g-4 align-items-stretch">
+            <!-- Plan 1: Third-Party Only -->
+            <div class="col-lg-4">
+                <div class="nx-card h-100 d-flex flex-column justify-content-between p-4">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h4 class="h5 fw-bold mb-0 text-dark">Third-Party Liability</h4>
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary border">Statutory</span>
+                        </div>
+                        <p class="text-secondary small mb-3">Legal baseline protection covering bodily injury and property damage to external third parties.</p>
+                        <div class="mb-4">
+                            <span class="fs-3 fw-bold text-primary font-monospace">1.250%</span>
+                            <span class="text-muted small">of vehicle IDV / year</span>
+                        </div>
+
+                        <ul class="list-unstyled d-flex flex-column gap-2 small text-secondary border-top pt-3 mb-4">
+                            <li class="d-flex align-items-center gap-2">
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                                <span>Third-Party Property Damage</span>
+                            </li>
+                            <li class="d-flex align-items-center gap-2">
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                                <span>Third-Party Bodily Injury / Liability</span>
+                            </li>
+                            <li class="d-flex align-items-center gap-2 text-muted text-decoration-line-through">
+                                <i class="bi bi-x-circle text-secondary"></i>
+                                <span>Own Vehicle Collision Damage</span>
+                            </li>
+                            <li class="d-flex align-items-center gap-2 text-muted text-decoration-line-through">
+                                <i class="bi bi-x-circle text-secondary"></i>
+                                <span>Zero Depreciation Replacement</span>
+                            </li>
+                            <li class="d-flex align-items-center gap-2 text-muted text-decoration-line-through">
+                                <i class="bi bi-x-circle text-secondary"></i>
+                                <span>24/7 Roadside Assistance</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <a href="{% url 'quotations:estimator' %}?plan=THIRD_PARTY" class="nx-btn-outline w-100 justify-content-center py-2">
+                        <span>Select Third-Party</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Plan 2: Comprehensive (Featured) -->
+            <div class="col-lg-4">
+                <div class="nx-card nx-card-highlight h-100 d-flex flex-column justify-content-between p-4 bg-white shadow-md">
+                    <div class="nx-card-badge">Most Popular</div>
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h4 class="h5 fw-bold mb-0 text-primary">Comprehensive Plus</h4>
+                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">Recommended</span>
+                        </div>
+                        <p class="text-secondary small mb-3">All-around collision, fire, theft, natural disaster, and third-party protection with standard deductible.</p>
+                        <div class="mb-4">
+                            <span class="fs-3 fw-bold text-primary font-monospace">2.850%</span>
+                            <span class="text-muted small">of vehicle IDV / year</span>
+                        </div>
+
+                        <ul class="list-unstyled d-flex flex-column gap-2 small text-secondary border-top pt-3 mb-4">
+                            <li class="d-flex align-items-center gap-2 fw-semibold text-dark">
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                                <span>All Third-Party Liability Coverages</span>
+                            </li>
+                            <li class="d-flex align-items-center gap-2 fw-semibold text-dark">
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                                <span>Own Vehicle Collision & Accident Damage</span>
+                            </li>
+                            <li class="d-flex align-items-center gap-2">
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                                <span>Fire, Theft, Vandalism & Flood Coverage</span>
+                            </li>
+                            <li class="d-flex align-items-center gap-2">
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                                <span>24/7 Nationwide Roadside Assistance</span>
+                            </li>
+                            <li class="d-flex align-items-center gap-2 text-muted text-decoration-line-through">
+                                <i class="bi bi-x-circle text-secondary"></i>
+                                <span>Zero Depreciation Settlement Waiver</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <a href="{% url 'quotations:estimator' %}?plan=COMPREHENSIVE" class="nx-btn-primary w-100 justify-content-center py-2.5">
+                        <span>Get Comprehensive</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Plan 3: Zero Depreciation Premium -->
+            <div class="col-lg-4">
+                <div class="nx-card h-100 d-flex flex-column justify-content-between p-4">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h4 class="h5 fw-bold mb-0 text-dark">Zero-Dep Premium</h4>
+                            <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">Maximum</span>
+                        </div>
+                        <p class="text-secondary small mb-3">Top-tier full payout without part depreciation deduction on bumpers, fiber, glass, or rubber parts.</p>
+                        <div class="mb-4">
+                            <span class="fs-3 fw-bold text-primary font-monospace">3.500%</span>
+                            <span class="text-muted small">of vehicle IDV / year</span>
+                        </div>
+
+                        <ul class="list-unstyled d-flex flex-column gap-2 small text-secondary border-top pt-3 mb-4">
+                            <li class="d-flex align-items-center gap-2 fw-semibold text-dark">
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                                <span>Everything in Comprehensive Plus</span>
+                            </li>
+                            <li class="d-flex align-items-center gap-2 fw-semibold text-dark">
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                                <span>100% Zero Depreciation on Replacement Parts</span>
+                            </li>
+                            <li class="d-flex align-items-center gap-2">
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                                <span>Engine & Electronic Gearbox Protection</span>
+                            </li>
+                            <li class="d-flex align-items-center gap-2">
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                                <span>Key Replacement & Consumables Allowance</span>
+                            </li>
+                            <li class="d-flex align-items-center gap-2">
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                                <span>Priority Claims Queue Adjudication</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <a href="{% url 'quotations:estimator' %}?plan=ZERO_DEP_PREMIUM" class="nx-btn-outline w-100 justify-content-center py-2">
+                        <span>Select Zero-Dep</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 4-Step Intelligent Workflow -->
+<section class="py-5 bg-white border-top border-bottom">
+    <div class="container py-3">
+        <div class="text-center max-w-700 mx-auto mb-5">
+            <span class="badge bg-primary bg-opacity-10 text-primary fw-bold text-uppercase px-3 py-1.5 rounded-pill mb-2">How It Works</span>
+            <h2 class="h1 fw-bold mb-2">From Quote to Protection in Minutes</h2>
+            <p class="text-secondary mb-0">Engineered to eliminate paperwork, manual delays, and opaque underwriting decisions.</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="nx-card h-100 border-0 bg-light p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="nx-icon-box nx-icon-blue mb-0">
+                            <i class="bi bi-car-front-fill"></i>
+                        </div>
+                        <span class="fs-4 fw-bold text-muted opacity-50">01</span>
+                    </div>
+                    <h5 class="fw-bold mb-2">Register Vehicle</h5>
+                    <p class="text-secondary small mb-0">Automatic uppercase plate normalization and IDV lock prevent duplicate or fraudulent records.</p>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="nx-card h-100 border-0 bg-light p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="nx-icon-box nx-icon-green mb-0">
+                            <i class="bi bi-cpu-fill"></i>
+                        </div>
+                        <span class="fs-4 fw-bold text-muted opacity-50">02</span>
+                    </div>
+                    <h5 class="fw-bold mb-2">ML Risk Inference</h5>
+                    <p class="text-secondary small mb-0">Dual machine learning models evaluate driver risk and predicted loss severity with full explainability.</p>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="nx-card h-100 border-0 bg-light p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="nx-icon-box nx-icon-amber mb-0">
+                            <i class="bi bi-credit-card-2-front-fill"></i>
+                        </div>
+                        <span class="fs-4 fw-bold text-muted opacity-50">03</span>
+                    </div>
+                    <h5 class="fw-bold mb-2">Simulated Checkout</h5>
+                    <p class="text-secondary small mb-0">Luhn Modulo-10 checksum validation with BIN network detection authorizes payment in seconds.</p>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="nx-card h-100 border-0 bg-light p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="nx-icon-box nx-icon-purple mb-0">
+                            <i class="bi bi-shield-fill-check"></i>
+                        </div>
+                        <span class="fs-4 fw-bold text-muted opacity-50">04</span>
+                    </div>
+                    <h5 class="fw-bold mb-2">Instant Active Policy</h5>
+                    <p class="text-secondary small mb-0">Leap-year-aware policy issuance with non-mutating renewal history and full conversational RAG support.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Role Workspaces Section -->
+<section class="py-5 bg-light">
+    <div class="container py-3">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 gap-3">
+            <div>
+                <span class="badge bg-primary bg-opacity-10 text-primary fw-bold text-uppercase px-3 py-1.5 rounded-pill mb-2">Role-Based Access</span>
+                <h2 class="h2 fw-bold mb-1">Integrated Operational Workspaces</h2>
+                <p class="text-secondary mb-0">Four tailored views over a shared, audited relational schema.</p>
+            </div>
+            <a href="{% url 'accounts:login' %}" class="nx-btn-outline">
+                <i class="bi bi-box-arrow-in-right me-1"></i>
+                <span>Portal Sign In</span>
+            </a>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-3">
+                <div class="nx-card h-100 p-4 border-top border-4 border-primary">
+                    <span class="badge bg-primary mb-2">Customer</span>
+                    <h5 class="fw-bold mb-2">Customer Portal</h5>
+                    <p class="text-secondary small mb-3">Manage registered vehicles, monitor renewals, track active claims, and file service requests.</p>
+                    <a href="{% url 'customers:dashboard' %}" class="small text-primary fw-bold text-decoration-none">Access Customer Hub &rarr;</a>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <div class="nx-card h-100 p-4 border-top border-4 border-info">
+                    <span class="badge bg-info text-dark mb-2">Underwriter</span>
+                    <h5 class="fw-bold mb-2">Underwriting Desk</h5>
+                    <p class="text-secondary small mb-3">Inspect dual ML risk signals, evaluate high-value quotations, and assist client policy renewals.</p>
+                    <a href="{% url 'staff:underwriter-dashboard' %}" class="small text-info fw-bold text-decoration-none">Access Underwriter Desk &rarr;</a>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <div class="nx-card h-100 p-4 border-top border-4 border-warning">
+                    <span class="badge bg-warning text-dark mb-2">Claims Handler</span>
+                    <h5 class="fw-bold mb-2">Claims Operations</h5>
+                    <p class="text-secondary small mb-3">Shared unassigned queue, self-assignment, evidence inspection, and ₹5,000 authority limit governance.</p>
+                    <a href="{% url 'staff:claims-handler-dashboard' %}" class="small text-warning fw-bold text-decoration-none">Access Claims Queue &rarr;</a>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <div class="nx-card h-100 p-4 border-top border-4 border-dark">
+                    <span class="badge bg-dark text-white mb-2">Administrator</span>
+                    <h5 class="fw-bold mb-2">Executive Admin</h5>
+                    <p class="text-secondary small mb-3">Gross written premium, loss ratio analytics, staff workload reassignments, and compliance logs.</p>
+                    <a href="{% url 'staff:admin-dashboard' %}" class="small text-dark fw-bold text-decoration-none">Access Admin Console &rarr;</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const slider = document.getElementById('sliderVehicleValue');
+    const displayVal = document.getElementById('displayVehicleValue');
+    const typeSelect = document.getElementById('calcVehicleType');
+    const durationSelect = document.getElementById('calcDuration');
+    const planRadios = document.querySelectorAll('input[name="planRadio"]');
+    const outputPremium = document.getElementById('calcOutputPremium');
+    const quoteBtn = document.getElementById('calcQuoteBtn');
+
+    const rates = {
+        'THIRD_PARTY': 0.0125,
+        'COMPREHENSIVE': 0.0285,
+        'ZERO_DEP_PREMIUM': 0.0350,
+    };
+
+    function recalculate() {
+        const val = parseFloat(slider.value) || 28000;
+        displayVal.textContent = '₹' + val.toLocaleString();
+
+        let plan = 'COMPREHENSIVE';
+        planRadios.forEach(r => { if (r.checked) plan = r.value; });
+
+        const duration = parseInt(durationSelect.value) || 1;
+        const discount = duration === 2 ? 0.05 : (duration === 3 ? 0.10 : 0.0);
+
+        const baseRate = rates[plan] || 0.0285;
+        const rawPremium = val * baseRate * duration * (1 - discount);
+        const finalPremium = Math.max(rawPremium, 150.0);
+
+        outputPremium.textContent = '₹' + finalPremium.toFixed(2);
+        quoteBtn.href = `{% url 'quotations:estimator' %}?plan=${plan}&vehicle_value=${val}&duration_years=${duration}&vehicle_type=${typeSelect.value}`;
+    }
+
+    slider.addEventListener('input', recalculate);
+    typeSelect.addEventListener('change', recalculate);
+    durationSelect.addEventListener('change', recalculate);
+    planRadios.forEach(r => r.addEventListener('change', recalculate));
+
+    recalculate();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block title %}Customer Search & Registration | Underwriter Desk{% endblock %}
+
+{% block content %}
+<section class="py-4 bg-light border-bottom">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <a href="{% url 'staff:underwriter-dashboard' %}" class="small text-secondary text-decoration-none">
+                    <i class="bi bi-arrow-left"></i> Back to Underwriter Desk
+                </a>
+                <h1 class="h3 fw-bold mb-0 mt-1">Customer Search & Underwriting Registration</h1>
+            </div>
+            <a href="{% url 'staff:underwriter-policy-create' %}" class="nx-btn-primary py-2 small">
+                <i class="bi bi-file-earmark-plus"></i> Issue Policy
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="py-5 bg-white">
+    <div class="container py-2">
+        <div class="row g-4">
+            <!-- Search & List Column -->
+            <div class="col-lg-7">
+                <div class="nx-card shadow-sm p-4 mb-4">
+                    <h5 class="h6 fw-bold mb-3">Search Customer Directory</h5>
+                    <form method="get" class="d-flex gap-2 mb-4">
+                        <input type="text" class="form-control" name="q" value="{{ query }}" placeholder="Search by name, email, phone, or customer code...">
+                        <button type="submit" class="nx-btn-primary px-3">
+                            <i class="bi bi-search"></i> Search
+                        </button>
+                    </form>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle small mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Customer Code</th>
+                                    <th>Name</th>
+                                    <th>Email / Phone</th>
+                                    <th>Vehicles</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for c in customers %}
+                                    <tr>
+                                        <td class="font-monospace fw-bold text-primary">{{ c.customer_code }}</td>
+                                        <td>{{ c.user.get_full_name|default:"Customer" }}</td>
+                                        <td>
+                                            <div>{{ c.user.email }}</div>
+                                            <span class="text-muted small">{{ c.user.phone_number|default:"No phone" }}</span>
+                                        </td>
+                                        <td><span class="badge bg-light text-dark border">{{ c.vehicles.count }} Vehicle(s)</span></td>
+                                        <td>
+                                            <a href="{% url 'staff:underwriter-policy-create' %}?customer_id={{ c.id }}" class="btn btn-sm btn-outline-primary py-0">
+                                                Issue Policy
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-4">No customers found matching "{{ query }}".</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- New Customer Quick Registration -->
+            <div class="col-lg-5">
+                <div class="nx-card shadow-sm p-4">
+                    <h5 class="h6 fw-bold mb-3"><i class="bi bi-person-plus-fill text-primary me-2"></i>Register New Customer</h5>
+                    <p class="text-secondary small mb-3">Onboard a prospective customer to proceed with vehicle underwriting.</p>
+
+                    <form method="post" action="{% url 'staff:underwriter-customers' %}" class="d-flex flex-column gap-3">
+                        {% csrf_token %}
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold text-secondary">First Name</label>
+                                <input type="text" class="form-control form-control-sm" name="first_name" required placeholder="Robert">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold text-secondary">Last Name</label>
+                                <input type="text" class="form-control form-control-sm" name="last_name" required placeholder="Chen">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="form-label small fw-semibold text-secondary">Email Address</label>
+                            <input type="email" class="form-control form-control-sm" name="email" required placeholder="robert.chen@example.com">
+                        </div>
+
+                        <div>
+                            <label class="form-label small fw-semibold text-secondary">Phone Number</label>
+                            <input type="tel" class="form-control form-control-sm" name="phone_number" placeholder="+1 555 019 3399">
+                        </div>
+
+                        <div>
+                            <label class="form-label small fw-semibold text-secondary">Driver License Number</label>
+                            <input type="text" class="form-control form-control-sm font-monospace" name="driving_license_number" placeholder="DL-WA-99214">
+                        </div>
+
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold text-secondary">City</label>
+                                <input type="text" class="form-control form-control-sm" name="city" placeholder="Seattle">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold text-secondary">Postal Code</label>
+                                <input type="text" class="form-control form-control-sm" name="postal_code" placeholder="98101">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="nx-btn-primary w-100 justify-content-center py-2 mt-2 small">
+                            <i class="bi bi-person-check-fill"></i> Register Customer Profile
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

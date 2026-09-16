@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}403 - Access Denied | Nexisure Vehicle Insurance{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-white text-center">
+    <div class="container py-5 max-w-600">
+        <div class="display-1 fw-bold text-danger mb-3">403</div>
+        <h1 class="h3 fw-bold mb-3">Access Denied</h1>
+        <p class="text-secondary mb-4">
+            You do not have the required permissions or role authorization to access this operational desk or record.
+        </p>
+        <a href="{% url 'home' %}" class="nx-btn-outline">
+            <i class="bi bi-shield-lock-fill"></i> Return Safely Home
+        </a>
+    </div>
+</section>
+{% endblock %}

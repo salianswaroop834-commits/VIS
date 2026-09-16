@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}Request {{ req.request_number }} | Nexisure Servicing{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-white">
+    <div class="container py-2 max-w-900">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <a href="{% url 'service_requests:list' %}" class="text-decoration-none text-secondary small">
+                    <i class="bi bi-arrow-left"></i> Back to Servicing Requests
+                </a>
+                <h1 class="h3 fw-bold mb-0 mt-1">Service Request: <span class="font-monospace text-primary">{{ req.request_number }}</span></h1>
+            </div>
+            <div>
+                {% if req.status == 'RESOLVED' %}
+                    <span class="badge bg-success fs-6">RESOLVED</span>
+                {% elif req.status == 'REJECTED' %}
+                    <span class="badge bg-danger fs-6">REJECTED</span>
+                {% elif req.status == 'IN_PROGRESS' %}
+                    <span class="badge bg-info text-dark fs-6">IN PROGRESS</span>
+                {% else %}
+                    <span class="badge bg-secondary fs-6">SUBMITTED</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="nx-card shadow-sm p-4 mb-4">
+                    <h5 class="fw-bold mb-3 border-bottom pb-2">{{ req.title }}</h5>
+                    <div class="mb-3">
+                        <span class="badge bg-light text-dark border me-2">{{ req.get_request_type_display }}</span>
+                        <span class="text-muted small">Submitted on {{ req.created_at|date:"M d, Y H:i" }}</span>
+                    </div>
+
+                    <div class="p-3 bg-light rounded mb-4">
+                        <h6 class="small text-muted fw-bold text-uppercase mb-2">Request Description</h6>
+                        <p class="mb-0 text-dark" style="white-space: pre-wrap;">{{ req.description }}</p>
+                    </div>
+
+                    {% if req.resolution_notes %}
+                    <div class="p-3 bg-success bg-opacity-10 border border-success border-opacity-25 rounded mb-3">
+                        <h6 class="small text-success fw-bold text-uppercase mb-1">Resolution / Response Notes</h6>
+                        <p class="mb-1 text-dark small" style="white-space: pre-wrap;">{{ req.resolution_notes }}</p>
+                        {% if req.resolved_at %}
+                        <div class="text-muted small">Actioned at: {{ req.resolved_at|date:"M d, Y H:i" }}</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="nx-card shadow-sm p-4 mb-4">
+                    <h6 class="fw-bold text-secondary text-uppercase small mb-3">Request Metadata</h6>
+                    <dl class="row small mb-0">
+                        <dt class="col-sm-5 text-muted">Customer:</dt>
+                        <dd class="col-sm-7 fw-semibold">{{ req.customer.user.get_full_name|default:req.customer.user.username }}</dd>
+
+                        <dt class="col-sm-5 text-muted">Email:</dt>
+                        <dd class="col-sm-7">{{ req.customer.user.email }}</dd>
+
+                        <dt class="col-sm-5 text-muted">Assigned Staff:</dt>
+                        <dd class="col-sm-7">
+                            {% if req.assigned_staff %}
+                                {{ req.assigned_staff.get_full_name|default:req.assigned_staff.username }}
+                            {% else %}
+                                <span class="text-muted fst-italic">Unassigned</span>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-5 text-muted">Linked Policy:</dt>
+                        <dd class="col-sm-7">
+                            {% if req.policy %}
+                                <a href="{% url 'policies:detail' req.policy.pk %}" class="font-monospace text-decoration-none">
+                                    {{ req.policy.policy_number }}
+                                </a>
+                            {% else %}
+                                <span class="text-muted">None (General)</span>
+                            {% endif %}
+                        </dd>
+                    </dl>
+                </div>
+
+                {% if can_manage %}
+                <div class="nx-card shadow-sm p-4 border border-primary border-opacity-25">
+                    <h6 class="fw-bold text-primary mb-3">
+                        <i class="bi bi-gear-fill me-1"></i> Update Request Status
+                    </h6>
+                    <form method="post" action="{% url 'service_requests:update_status' req.pk %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-secondary">Set Status</label>
+                            <select class="form-select form-select-sm" name="status" required>
+                                {% for code, label in status_choices %}
+                                <option value="{{ code }}" {% if req.status == code %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-secondary">Resolution / Feedback Notes</label>
+                            <textarea class="form-control form-control-sm" name="resolution_notes" rows="3" placeholder="Enter resolution notes for the customer...">{{ req.resolution_notes }}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-primary w-100">
+                            Save Status Update
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

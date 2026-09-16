@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}FAQ & Procedures | Nexisure Vehicle Insurance{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-white">
+    <div class="container py-4 max-w-800">
+        <div class="text-center mb-5">
+            <span class="badge bg-primary bg-opacity-10 text-primary fw-bold text-uppercase px-3 py-2 rounded-pill">Help & Information</span>
+            <h1 class="h1 fw-bold mt-3 mb-3">Frequently Asked Questions</h1>
+            <p class="text-secondary">
+                Find answers regarding vehicle coverages, claims procedures, and platform governance.
+            </p>
+        </div>
+
+        <div class="accordion accordion-flush" id="faqAccordion">
+            <div class="accordion-item border rounded-3 mb-3">
+                <h2 class="accordion-header" id="faqHeading1">
+                    <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#faq1" aria-expanded="false" aria-controls="faq1">
+                        What documents are required to register an accident claim?
+                    </button>
+                </h2>
+                <div id="faq1" class="accordion-collapse collapse" aria-labelledby="faqHeading1" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body text-secondary small">
+                        To process an own-damage or collision claim, the required documents include:
+                        <ul class="mt-2 mb-0">
+                            <li>Valid Driver License of the person driving during the incident</li>
+                            <li>Clear vehicle damage photographs showing the registration plate</li>
+                            <li>Official Police Report / First Information Report (mandatory for third-party injury, major road incidents, or vehicle theft)</li>
+                            <li>Preliminary repair garage invoice or estimate</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item border rounded-3 mb-3">
+                <h2 class="accordion-header" id="faqHeading2">
+                    <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#faq2" aria-expanded="false" aria-controls="faq2">
+                        Can an AI model or automated algorithm reject my claim?
+                    </button>
+                </h2>
+                <div id="faq2" class="accordion-collapse collapse" aria-labelledby="faqHeading2" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body text-secondary small">
+                        <strong>Never.</strong> Nexisure adheres strictly to Responsible Insurance principles. Machine learning models produce estimated claim probability and severity scores strictly as decision-support indicators for staff. All approvals, rejections, and settlement payouts must be authorized by a human claims handler.
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item border rounded-3 mb-3">
+                <h2 class="accordion-header" id="faqHeading3">
+                    <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#faq3" aria-expanded="false" aria-controls="faq3">
+                        How does policy renewal work?
+                    </button>
+                </h2>
+                <div id="faq3" class="accordion-collapse collapse" aria-labelledby="faqHeading3" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body text-secondary small">
+                        Policies can be renewed starting 30 days prior to expiration. To preserve historical auditing integrity, renewals create a brand-new policy record with updated rates while linking back to the previous policy ID through relational lineage.
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item border rounded-3 mb-3">
+                <h2 class="accordion-header" id="faqHeading4">
+                    <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#faq4" aria-expanded="false" aria-controls="faq4">
+                        Can an active policy's premium or duration be edited mid-term?
+                    </button>
+                </h2>
+                <div id="faq4" class="accordion-collapse collapse" aria-labelledby="faqHeading4" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body text-secondary small">
+                        Under our established business rules, financial terms (premium amount and duration) are permanently locked upon policy issuance. Premium adjustments or coverage conversions take place through structured renewals or official service endorsements rather than arbitrary mid-term modifications.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

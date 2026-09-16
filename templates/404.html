@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block title %}404 - Page Not Found | Nexisure Vehicle Insurance{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-white text-center flex-grow-1 d-flex align-items-center">
+    <div class="container py-5" style="max-width: 650px;">
+        <div class="nx-icon-box nx-icon-blue mx-auto mb-3" style="width: 72px; height: 72px; font-size: 2.2rem;">
+            <i class="bi bi-compass"></i>
+        </div>
+        <div class="display-1 fw-bolder text-primary mb-2 font-monospace">404</div>
+        <h1 class="h3 fw-bold mb-3 text-dark">Page or Policy Resource Not Found</h1>
+        <p class="text-secondary mb-4 lh-base">
+            The page, policy contract, or vehicle record you requested could not be located. It may have been archived or the URL may be misspelled.
+        </p>
+        <div class="d-flex justify-content-center gap-3">
+            <a href="{% url 'home' %}" class="nx-btn-primary py-2 px-4">
+                <i class="bi bi-house-door-fill"></i> Return Home
+            </a>
+            <a href="{% url 'faq' %}" class="nx-btn-outline py-2 px-4">
+                <i class="bi bi-question-circle"></i> View Help & FAQs
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}

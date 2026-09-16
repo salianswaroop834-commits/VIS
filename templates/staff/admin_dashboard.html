@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+
+{% block title %}Administrator Governance | Nexisure Operations{% endblock %}
+
+{% block content %}
+<section class="py-4 bg-dark text-white border-bottom border-secondary border-opacity-25">
+    <div class="container">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+                <span class="badge bg-secondary mb-1">Executive Administration</span>
+                <h1 class="h3 fw-bold mb-0 text-white">System Governance & Operations Command</h1>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{% url 'staff:staff-list' %}" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-people-fill me-1"></i> Staff Directory
+                </a>
+                <a href="{% url 'analytics:dashboard' %}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-graph-up me-1"></i> Actuarial Analytics
+                </a>
+                <a href="{% url 'audit:list' %}" class="btn btn-outline-warning btn-sm">
+                    <i class="bi bi-shield-check me-1"></i> Compliance Ledger
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-5 bg-white">
+    <div class="container py-2">
+        <!-- High Level Domain KPIs -->
+        <div class="row g-3 mb-5">
+            <div class="col-md-3 col-6">
+                <div class="nx-kpi-card shadow-sm border-start border-primary border-4">
+                    <div>
+                        <div class="nx-kpi-value">{{ active_policies_count }}</div>
+                        <div class="nx-kpi-label">Active Policies</div>
+                    </div>
+                    <i class="bi bi-files text-primary fs-2"></i>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="nx-kpi-card shadow-sm border-start border-success border-4">
+                    <div>
+                        <div class="nx-kpi-value">₹{{ total_premium|floatformat:0 }}</div>
+                        <div class="nx-kpi-label">Total Written Premium</div>
+                    </div>
+                    <i class="bi bi-wallet2 text-success fs-2"></i>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="nx-kpi-card shadow-sm border-start border-danger border-4">
+                    <div>
+                        <div class="nx-kpi-value">{{ loss_ratio }}%</div>
+                        <div class="nx-kpi-label">Incurred Loss Ratio</div>
+                    </div>
+                    <i class="bi bi-percent text-danger fs-2"></i>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="nx-kpi-card shadow-sm border-start border-info border-4">
+                    <div>
+                        <div class="nx-kpi-value">{{ governance.success_rate_pct|default:"100.0" }}%</div>
+                        <div class="nx-kpi-label">ML Serving SLA</div>
+                    </div>
+                    <i class="bi bi-cpu text-info fs-2"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <!-- System Audit Feed -->
+                <div class="nx-card shadow-sm mb-4 border">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="h5 fw-bold mb-0">Live Compliance Audit Ledger</h4>
+                        <a href="{% url 'audit:list' %}" class="small text-primary text-decoration-none">Search Ledger &rarr;</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle small mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Actor</th>
+                                    <th>Role</th>
+                                    <th>Action</th>
+                                    <th>Entity</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in recent_audits %}
+                                <tr>
+                                    <td class="text-muted">{{ log.created_at|date:"M d, H:i" }}</td>
+                                    <td>{{ log.actor_email|default:"System" }}</td>
+                                    <td><span class="badge bg-dark">{{ log.actor_role|default:"SYSTEM" }}</span></td>
+                                    <td><span class="badge bg-light text-dark border">{{ log.action }}</span></td>
+                                    <td class="font-monospace text-secondary">{{ log.target_entity }}:{{ log.target_id|truncatechars:12 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-3 text-muted">No audit events recorded yet.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Staff Distribution -->
+                <div class="nx-card shadow-sm border p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="h5 fw-bold mb-0">Staff Operational Roster</h4>
+                        <a href="{% url 'staff:staff-list' %}" class="small text-primary text-decoration-none">Manage Workload &rarr;</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle small mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Staff Member</th>
+                                    <th>Staff Code</th>
+                                    <th>Department Role</th>
+                                    <th>Approval Limit</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for s in staff_members %}
+                                <tr>
+                                    <td class="fw-bold">{{ s.user.get_full_name|default:s.user.email }}</td>
+                                    <td><code>{{ s.staff_code }}</code></td>
+                                    <td><span class="badge bg-secondary">{{ s.user.role }}</span></td>
+                                    <td>₹{{ s.max_claim_approval_limit|floatformat:0 }}</td>
+                                    <td>
+                                        {% if s.user.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Deactivated</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-3 text-muted">No staff members enrolled.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <!-- Staff Departure & Workload Continuity Card -->
+                <div class="nx-card shadow-sm mb-4 border">
+                    <h5 class="h6 fw-bold mb-2">Staff Workload Continuity</h5>
+                    <p class="text-secondary small mb-3">
+                        System enforces strict departure protection. Underwriters with active policies or Claims Handlers with in-review claims cannot be deactivated without workload reassignment.
+                    </p>
+                    <a href="{% url 'staff:staff-list' %}" class="nx-btn-outline w-100 justify-content-center py-2 small">
+                        <i class="bi bi-arrow-left-right me-1"></i> Reassign Workloads
+                    </a>
+                </div>
+
+                <!-- MLOps Model Registry Overview -->
+                <div class="nx-card shadow-sm border p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="h6 fw-bold mb-0">MLOps Model Registry</h5>
+                        <a href="{% url 'predictions:models' %}" class="small text-primary">Models &rarr;</a>
+                    </div>
+                    <div class="d-flex flex-column gap-2 small">
+                        {% for am in mlops_summary.active_models %}
+                        <div class="p-2 rounded bg-light border d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong class="d-block text-dark">{{ am.name }}</strong>
+                                <span class="text-muted" style="font-size: 0.75rem;">v{{ am.version }} &bull; {{ am.algorithm }}</span>
+                            </div>
+                            <span class="badge bg-success">Active</span>
+                        </div>
+                        {% empty %}
+                        <div class="p-2 text-muted text-center small">No active models deployed.</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mt-3 pt-2 border-top small text-muted d-flex justify-content-between">
+                        <span>Total Inferences: <strong>{{ governance.total_predictions|default:"0" }}</strong></span>
+                        <span>Avg Latency: <strong>{{ governance.avg_latency_ms|default:"0" }}ms</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

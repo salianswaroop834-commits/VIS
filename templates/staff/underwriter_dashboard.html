@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block title %}Underwriter Desk | Nexisure Operations{% endblock %}
+
+{% block content %}
+<section class="py-4 bg-light border-bottom">
+    <div class="container">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+                <span class="badge bg-info text-dark mb-1">Underwriting Operations</span>
+                <h1 class="h3 fw-bold mb-0">Underwriter Portfolio & Policy Management</h1>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{% url 'staff:underwriter-customers' %}" class="nx-btn-outline py-2 small">
+                    <i class="bi bi-people-fill"></i> Customer Directory
+                </a>
+                <a href="{% url 'staff:underwriter-policy-create' %}" class="nx-btn-primary py-2 small">
+                    <i class="bi bi-file-earmark-plus"></i> Issue New Policy
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-5 bg-white">
+    <div class="container py-2">
+        <div class="row g-3 mb-5">
+            <div class="col-md-3 col-6">
+                <div class="nx-kpi-card shadow-sm">
+                    <div>
+                        <div class="nx-kpi-value">{{ active_count }}</div>
+                        <div class="nx-kpi-label">Active Policies</div>
+                    </div>
+                    <i class="bi bi-folder-check text-info fs-2"></i>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="nx-kpi-card shadow-sm">
+                    <div>
+                        <div class="nx-kpi-value">₹{{ total_premium|floatformat:0 }}</div>
+                        <div class="nx-kpi-label">Managed Premium</div>
+                    </div>
+                    <i class="bi bi-cash-stack text-success fs-2"></i>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="nx-kpi-card shadow-sm">
+                    <div>
+                        <div class="nx-kpi-value">{{ policies.count }}</div>
+                        <div class="nx-kpi-label">Total Portfolio</div>
+                    </div>
+                    <i class="bi bi-files text-primary fs-2"></i>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="nx-kpi-card shadow-sm">
+                    <div>
+                        <div class="nx-kpi-value">100%</div>
+                        <div class="nx-kpi-label">Financial Lock</div>
+                    </div>
+                    <i class="bi bi-lock-fill text-warning fs-2"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="nx-card shadow-sm p-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+                <h4 class="h5 fw-bold mb-0">Managed Policies Directory</h4>
+                
+                <form method="get" class="d-flex gap-2">
+                    <input type="text" class="form-control form-control-sm" name="q" value="{{ query }}" placeholder="Search by policy # or license plate...">
+                    <button type="submit" class="nx-btn-primary btn-sm px-3">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </form>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle small mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Policy Number</th>
+                            <th>Customer</th>
+                            <th>Vehicle</th>
+                            <th>Plan</th>
+                            <th>Premium</th>
+                            <th>End Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in policies %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'policies:detail' p.id %}" class="fw-bold font-monospace text-primary text-decoration-none">
+                                        {{ p.policy_number }}
+                                    </a>
+                                    {% if p.previous_policy %}
+                                        <div><span class="badge bg-light text-muted border" style="font-size: 0.68rem;">Renewed</span></div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div>{{ p.customer.user.get_full_name|default:p.customer.user.email }}</div>
+                                    <span class="text-muted small">{{ p.customer.customer_code }}</span>
+                                </td>
+                                <td>
+                                    <div><strong>{{ p.vehicle.make }} {{ p.vehicle.model }}</strong></div>
+                                    <span class="font-monospace text-muted small">{{ p.vehicle.registration_number }}</span>
+                                </td>
+                                <td>{{ p.coverage_plan.name }}</td>
+                                <td class="fw-bold font-monospace text-dark">₹{{ p.premium_amount|floatformat:2 }}</td>
+                                <td>{{ p.end_date|date:"M d, Y" }}</td>
+                                <td>
+                                    <span class="badge {% if p.status == 'ACTIVE' %}bg-success{% elif p.status == 'RENEWED' %}bg-info text-dark{% elif p.status == 'EXPIRED' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                        {{ p.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'policies:detail' p.id %}" class="btn btn-sm btn-outline-primary py-0">
+                                        Manage
+                                    </a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4">No policies found matching your search criteria.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

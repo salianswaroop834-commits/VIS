@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign In | Nexisure Vehicle Insurance{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-white">
+    <div class="container py-4 max-w-500">
+        <div class="text-center mb-4">
+            <span class="nx-brand-badge mb-2 d-inline-block">Authentication Portal</span>
+            <h1 class="h3 fw-bold">Sign In to Nexisure</h1>
+            <p class="text-secondary small">Access your policy portfolio or operational desk via Email OTP or password</p>
+        </div>
+
+        <div class="nx-card shadow-sm p-4">
+            <form method="post" action="{% url 'accounts:login' %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary small">Email Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                        <input type="email" class="form-control" name="email" required placeholder="customer@example.com">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary small">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
+                        <input type="password" class="form-control" name="password" required placeholder="••••••••">
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-4 small">
+                    <a href="{% url 'accounts:verify-otp' %}" class="text-primary text-decoration-none">Sign in with Email OTP &rarr;</a>
+                </div>
+
+                <button type="submit" class="nx-btn-primary w-100 justify-content-center py-2.5">
+                    <i class="bi bi-box-arrow-in-right"></i> Sign In
+                </button>
+            </form>
+
+            <hr class="my-4">
+
+            <div class="text-center small text-secondary">
+                Don't have an account yet? <a href="{% url 'accounts:register' %}" class="text-primary fw-semibold">Register here</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

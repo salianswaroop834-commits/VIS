@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}Issue Policy | Underwriter Desk{% endblock %}
+
+{% block content %}
+<section class="py-4 bg-light border-bottom">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <a href="{% url 'staff:underwriter-dashboard' %}" class="small text-secondary text-decoration-none">
+                    <i class="bi bi-arrow-left"></i> Back to Underwriter Desk
+                </a>
+                <h1 class="h3 fw-bold mb-0 mt-1">Issue Vehicle Insurance Policy</h1>
+            </div>
+            <a href="{% url 'staff:underwriter-customers' %}" class="nx-btn-outline py-2 small">
+                <i class="bi bi-person-plus-fill"></i> New Customer
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="py-5 bg-white">
+    <div class="container py-2 max-w-700">
+        <div class="nx-card shadow-sm p-4 p-md-5">
+            <form method="post" action="{% url 'staff:underwriter-policy-create' %}" class="d-flex flex-column gap-3">
+                {% csrf_token %}
+
+                <div>
+                    <label class="form-label fw-semibold text-secondary small">1. Select Insured Customer</label>
+                    <select class="form-select" name="customer_id" required>
+                        <option value="">-- Choose Customer Profile --</option>
+                        {% for c in customers %}
+                            <option value="{{ c.id }}" {% if request.GET.customer_id == c.id|stringformat:'s' %}selected{% endif %}>
+                                {{ c.customer_code }} - {{ c.user.get_full_name|default:c.user.email }} ({{ c.user.email }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="form-label fw-semibold text-secondary small">2. Select Registered Vehicle</label>
+                    <select class="form-select" name="vehicle_id" required>
+                        <option value="">-- Choose Vehicle Asset --</option>
+                        {% for v in vehicles %}
+                            <option value="{{ v.id }}">
+                                {{ v.make }} {{ v.model }} ({{ v.registration_number }}) - ₹{{ v.vehicle_value|floatformat:0 }} IDV [Owner: {{ v.customer.user.email }}]
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="form-label fw-semibold text-secondary small">3. Coverage Plan</label>
+                    <select class="form-select" name="coverage_plan" required>
+                        {% for p in plans %}
+                            <option value="{{ p.plan_code }}">
+                                {{ p.name }} (Rate: {{ p.base_rate_percentage }}% | Ded: ₹{{ p.standard_deductible|floatformat:0 }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="form-label fw-semibold text-secondary small">4. Policy Duration</label>
+                    <div class="d-flex gap-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="duration_years" id="uwTerm1" value="1" checked>
+                            <label class="form-check-label small" for="uwTerm1">1 Year</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="duration_years" id="uwTerm2" value="2">
+                            <label class="form-check-label small" for="uwTerm2">2 Years (5% Term Discount)</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="duration_years" id="uwTerm3" value="3">
+                            <label class="form-check-label small" for="uwTerm3">3 Years (10% Term Discount)</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info small mt-2" role="alert">
+                    <i class="bi bi-info-circle-fill me-1"></i>
+                    <strong>Financial Lock:</strong> Premium amount and duration will be permanently locked upon issuance. End date is automatically calculated.
+                </div>
+
+                <button type="submit" class="nx-btn-primary w-100 justify-content-center py-2.5">
+                    <i class="bi bi-file-earmark-check-fill"></i> Underwrite & Issue Active Policy
+                </button>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

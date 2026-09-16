@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}Privacy Policy | Nexisure Vehicle Insurance{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-white">
+    <div class="container py-4 max-w-800">
+        <h1 class="h2 fw-bold mb-4">Privacy Policy & Data Handling</h1>
+        
+        <div class="text-secondary small d-flex flex-column gap-3">
+            <p><strong>1. Data Minimization:</strong> Nexisure collects only simulated or test data required for demonstrating vehicle insurance management and claims workflows.</p>
+            <p><strong>2. Synthetic Data Principles:</strong> In accordance with our security guidelines, no production credentials, real personal identities, or active credit card numbers should ever be inputted into this platform.</p>
+            <p><strong>3. Row-Level Security:</strong> Relational data is partitioned using database policies, ensuring that each authenticated user can only access records strictly belonging to their verified identity.</p>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block title %}Email Security Verification | Nexisure Vehicle Insurance{% endblock %}
+
+{% block content %}
+<section class="py-5" style="background: radial-gradient(circle at 50% 0%, rgba(14, 165, 233, 0.08) 0%, transparent 70%); min-height: 80vh;">
+    <div class="container py-4 max-w-500">
+        <!-- Header -->
+        <div class="text-center mb-4">
+            <div class="d-inline-flex align-items-center justify-content-center p-3 rounded-circle mb-3" style="background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.25);">
+                <i class="bi bi-shield-lock-fill text-primary fs-2"></i>
+            </div>
+            <h1 class="h3 fw-bold mb-1">Email Security Verification</h1>
+            <p class="text-secondary small">Passwordless authentication via cryptographically secured One-Time Passcode</p>
+        </div>
+
+        <div class="nx-card shadow-sm p-4 p-md-5 mb-4">
+            {% if email %}
+                <!-- Step 2: Active Verification when email is known -->
+                <div class="text-center mb-4">
+                    <div class="d-inline-block px-3 py-1 rounded-pill bg-success-subtle text-success small fw-semibold mb-2">
+                        <i class="bi bi-envelope-check-fill me-1"></i> Passcode Dispatched to Inbox
+                    </div>
+                    <div class="fw-bold text-dark fs-6">{{ email }}</div>
+                    <a href="{% url 'accounts:verify-otp' %}?change_email=1" class="text-muted small text-decoration-underline">
+                        Change email address
+                    </a>
+                </div>
+
+                <!-- Strict Security Notice -->
+                <div class="alert alert-info py-2 px-3 small d-flex align-items-start gap-2 mb-4" style="background: rgba(14, 165, 233, 0.08); border-color: rgba(14, 165, 233, 0.2); color: #0369a1;">
+                    <i class="bi bi-info-circle-fill mt-1 flex-shrink-0"></i>
+                    <div>
+                        <strong>Direct-to-Inbox Security:</strong> For your protection, verification codes are dispatched strictly to your email and are <em>never</em> displayed on-screen. Check your spam or junk folder if not received within 30 seconds.
+                    </div>
+                </div>
+
+                <!-- Verify Form -->
+                <form method="post" action="{% url 'accounts:verify-otp' %}" id="otpVerifyForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="email" value="{{ email }}">
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold text-secondary small text-center d-block">
+                            Enter 6-Digit Passcode
+                        </label>
+                        <input type="text" 
+                               class="form-control text-center fs-2 font-monospace tracking-widest fw-bold" 
+                               name="otp_code" 
+                               maxlength="6" 
+                               pattern="\d{6}"
+                               inputmode="numeric"
+                               autocomplete="one-time-code"
+                               required 
+                               placeholder="• • • • • •" 
+                               autofocus
+                               style="letter-spacing: 0.5rem; height: 60px;">
+                        <div class="d-flex justify-content-between align-items-center mt-2 small text-muted">
+                            <span><i class="bi bi-clock-history me-1"></i> Valid for 10 minutes</span>
+                            <span>Max 5 attempts</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="nx-btn-primary w-100 justify-content-center py-2.5 fs-6 mb-3">
+                        <i class="bi bi-shield-check me-1"></i> Verify & Sign In
+                    </button>
+                </form>
+
+                <hr class="my-3 opacity-25">
+
+                <!-- Resend Form -->
+                <div class="text-center">
+                    <span class="text-secondary small me-1">Didn't receive the email?</span>
+                    <form method="post" action="{% url 'accounts:otp-request' %}" class="d-inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="email" value="{{ email }}">
+                        <button type="submit" class="btn btn-link p-0 text-primary small fw-semibold text-decoration-none border-0 align-baseline">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Resend Code
+                        </button>
+                    </form>
+                </div>
+
+            {% else %}
+                <!-- Step 1: Request Code when email is not yet set -->
+                <form method="post" action="{% url 'accounts:otp-request' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-secondary small">Registered Email Address</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                            <input type="email" class="form-control" name="email" required placeholder="customer@example.com" autofocus>
+                        </div>
+                        <div class="form-text small text-muted">
+                            We'll send a single-use 6-digit passcode straight to your email inbox.
+                        </div>
+                    </div>
+
+                    <button type="submit" class="nx-btn-primary w-100 justify-content-center py-2.5">
+                        <i class="bi bi-send-fill me-1"></i> Send Security Passcode
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+
+        <!-- Security Features Strip -->
+        <div class="row g-2 text-center small text-muted mb-4">
+            <div class="col-4">
+                <i class="bi bi-lock-fill text-primary d-block mb-1"></i>
+                <span style="font-size: 0.75rem;">SHA-256 Salted</span>
+            </div>
+            <div class="col-4">
+                <i class="bi bi-hourglass-split text-primary d-block mb-1"></i>
+                <span style="font-size: 0.75rem;">10-Min Ephemeral</span>
+            </div>
+            <div class="col-4">
+                <i class="bi bi-mailbox2 text-primary d-block mb-1"></i>
+                <span style="font-size: 0.75rem;">Inbox-Only Delivery</span>
+            </div>
+        </div>
+
+        <div class="text-center small text-secondary">
+            Prefer traditional credentials? <a href="{% url 'accounts:login' %}" class="text-primary fw-semibold">Sign in with Password</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

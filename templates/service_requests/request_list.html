@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}Policy Servicing Requests | Nexisure{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-white">
+    <div class="container py-2">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <span class="nx-brand-badge mb-1 d-inline-block">Operations & Support</span>
+                <h1 class="h3 fw-bold mb-0">Policy Servicing Requests</h1>
+            </div>
+            {% if request.user.is_customer %}
+            <a href="{% url 'service_requests:create' %}" class="nx-btn-primary py-2 small">
+                <i class="bi bi-plus-circle me-1"></i> New Service Request
+            </a>
+            {% endif %}
+        </div>
+
+        {% if not request.user.is_customer %}
+        <!-- Staff Filter Bar -->
+        <div class="d-flex gap-2 mb-4 overflow-auto pb-1">
+            <a href="{% url 'service_requests:list' %}" class="btn btn-sm {% if not selected_status %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                All Requests
+            </a>
+            {% for code, label in status_choices %}
+            <a href="{% url 'service_requests:list' %}?status={{ code }}" class="btn btn-sm {% if selected_status == code %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                {{ label }}
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="nx-card shadow-sm p-4">
+            {% if requests %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle small mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Request #</th>
+                            <th>Type</th>
+                            <th>Title</th>
+                            {% if not request.user.is_customer %}<th>Customer</th>{% endif %}
+                            <th>Related Policy</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in requests %}
+                        <tr>
+                            <td class="font-monospace fw-bold text-primary">{{ r.request_number }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ r.get_request_type_display }}</span></td>
+                            <td class="fw-semibold">{{ r.title }}</td>
+                            {% if not request.user.is_customer %}
+                            <td>{{ r.customer.user.get_full_name|default:r.customer.user.username }}</td>
+                            {% endif %}
+                            <td>
+                                {% if r.policy %}
+                                    <span class="font-monospace small">{{ r.policy.policy_number }}</span>
+                                {% else %}
+                                    <span class="text-muted small">General</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if r.status == 'RESOLVED' %}
+                                    <span class="badge bg-success">RESOLVED</span>
+                                {% elif r.status == 'REJECTED' %}
+                                    <span class="badge bg-danger">REJECTED</span>
+                                {% elif r.status == 'IN_PROGRESS' %}
+                                    <span class="badge bg-info text-dark">IN PROGRESS</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">SUBMITTED</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ r.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                <a href="{% url 'service_requests:detail' r.pk %}" class="btn btn-sm btn-outline-primary py-0">
+                                    View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="p-5 text-center text-secondary">
+                <i class="bi bi-inbox display-4 text-muted mb-2"></i>
+                <h4 class="h5 fw-bold text-dark mt-2">No Service Requests</h4>
+                <p class="small text-muted mb-0">There are no policy service requests to display under this view.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

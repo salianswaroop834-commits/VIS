@@ -1,0 +1,284 @@
+{% extends 'base.html' %}
+
+{% block title %}Simulated Checkout | Nexisure Vehicle Insurance{% endblock %}
+
+{% block content %}
+<section class="py-4 bg-light border-bottom">
+    <div class="container py-1 text-center" style="max-width: 750px;">
+        <span class="nx-brand-badge mb-2 d-inline-block">Simulated Gateway</span>
+        <h1 class="h3 fw-bold mb-1">Simulated Premium Checkout</h1>
+        <p class="text-secondary small mb-0">
+            Educational checkout demonstrating Luhn Modulo-10 checksum validation, dynamic BIN brand detection, and automated policy issuance.
+        </p>
+    </div>
+</section>
+
+<section class="py-5 bg-white">
+    <div class="container py-2" style="max-width: 960px;">
+        <!-- Demo Test Cards Quick-Fill Bar -->
+        <div class="card bg-light border mb-4 p-3 rounded-3 shadow-xs">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-credit-card-2-front-fill text-primary"></i>
+                    <strong class="small text-dark">Interactive Test Card Profiles (Click to Autofill):</strong>
+                </div>
+                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 small">
+                    <i class="bi bi-shield-check me-1"></i> Luhn Checksum Verified
+                </span>
+            </div>
+            <div class="d-flex flex-wrap gap-2 small">
+                <button type="button" class="btn btn-sm btn-outline-primary py-1.5 test-card-fill" data-card="4532000000080001" data-exp="12/28" data-cvv="123" data-network="visa">
+                    <i class="bi bi-credit-card me-1"></i> Visa (Approved)
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1.5 test-card-fill" data-card="5425233430109903" data-exp="12/28" data-cvv="123" data-network="mastercard">
+                    <i class="bi bi-credit-card-2-front me-1"></i> Mastercard (Approved)
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-info py-1.5 test-card-fill" data-card="378282246310005" data-exp="08/29" data-cvv="1234" data-network="amex">
+                    <i class="bi bi-credit-card-2-back me-1"></i> Amex (Approved)
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-warning text-dark py-1.5 test-card-fill" data-card="4532000000070002" data-exp="12/28" data-cvv="123" data-network="visa">
+                    <i class="bi bi-x-circle me-1"></i> Insufficient Funds
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger py-1.5 test-card-fill" data-card="4532000000060003" data-exp="12/28" data-cvv="123" data-network="visa">
+                    <i class="bi bi-shield-x me-1"></i> Fraud Blocked
+                </button>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Left Column: Interactive 3D Virtual Card & Form -->
+            <div class="col-lg-7">
+                <div class="nx-card shadow-sm p-4 p-md-4 border">
+                    <!-- 3D Virtual Card Visualization -->
+                    <div class="nx-card-simulator-container">
+                        <div class="nx-virtual-card visa" id="virtualCardGraphic">
+                            <div class="nx-virtual-card-top">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="nx-card-chip"></div>
+                                    <i class="bi bi-wifi fs-4 text-white opacity-75" style="transform: rotate(90deg);"></i>
+                                </div>
+                                <div class="nx-card-network-badge" id="cardBrandGraphic">VISA</div>
+                            </div>
+
+                            <div class="nx-card-display-number text-center" id="cardNumberGraphic">
+                                4532 &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; 0001
+                            </div>
+
+                            <div class="nx-virtual-card-bottom">
+                                <div>
+                                    <div class="text-white-50" style="font-size: 0.65rem;">Cardholder</div>
+                                    <div class="nx-card-val">AUTHORIZED HOLDER</div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="text-white-50" style="font-size: 0.65rem;">Expires</div>
+                                    <div class="nx-card-val" id="cardExpiryGraphic">12/28</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Form -->
+                    <form method="post" action="{% url 'payments:checkout' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="quotation_id" value="{{ quotation.id|default:'' }}">
+                        <input type="hidden" name="policy_id" value="{{ policy.id|default:'' }}">
+                        <input type="hidden" name="amount" value="{{ amount }}">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-secondary small">Card Number (Luhn Checksum Verified)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white" id="networkIcon"><i class="bi bi-credit-card text-primary"></i></span>
+                                <input type="text" name="card_number" class="form-control font-monospace" id="cardNumInput"
+                                       placeholder="4532 •••• •••• 0001" value="4532000000080001" maxlength="19" required>
+                                <span class="input-group-text bg-light text-primary fw-bold small" id="networkLabel">Visa</span>
+                            </div>
+                            <small class="text-success fw-medium" id="luhnFeedback"><i class="bi bi-check-circle-fill me-1"></i>Valid Luhn Modulo-10 checksum format.</small>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-6">
+                                <label class="form-label fw-semibold text-secondary small">Expiration (MM/YY)</label>
+                                <input type="text" name="expiry" id="expiryInput" class="form-control text-center font-monospace" placeholder="12/28" value="12/28" maxlength="7" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-semibold text-secondary small">CVV Code</label>
+                                <input type="password" name="cvv" id="cvvInput" class="form-control text-center font-monospace" placeholder="123" value="123" maxlength="4" required>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="nx-btn-primary w-100 justify-content-center py-2.5 fs-6 shadow-sm">
+                            <i class="bi bi-lock-fill me-1"></i>
+                            <span>Authorize Payment (₹{{ amount|floatformat:2 }})</span>
+                        </button>
+
+                        <div class="text-center text-muted small mt-3" style="font-size: 0.76rem;">
+                            <i class="bi bi-shield-lock-fill text-success me-1"></i>
+                            <span>256-Bit SSL Encrypted &bull; No Real Banking Data Stored &bull; Immediate Policy Issuance</span>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right Column: Premium Summary & Protection Ledger -->
+            <div class="col-lg-5">
+                <div class="nx-card shadow-sm p-4 border bg-light h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                            <h5 class="fw-bold mb-0 text-dark">Coverage Summary</h5>
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">Instant Bind</span>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="text-dark fw-bold fs-5">{{ item_title }}</div>
+                            <div class="text-secondary small">Vehicular protection policy backed by responsible decision support.</div>
+                        </div>
+
+                        <div class="bg-white rounded-3 p-3 border mb-3">
+                            <div class="d-flex justify-content-between py-1 border-bottom small">
+                                <span class="text-secondary">Vehicle IDV</span>
+                                <span class="fw-bold font-monospace text-dark">₹{{ quotation.vehicle_value|default:"25,000.00" }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between py-1 border-bottom small">
+                                <span class="text-secondary">Standard Deductible</span>
+                                <span class="fw-bold font-monospace text-dark">₹{{ quotation.deductible_amount|default:"1,000.00" }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between py-1 border-bottom small">
+                                <span class="text-secondary">Policy Duration</span>
+                                <span class="fw-bold text-dark">{{ quotation.duration_years|default:1 }} Year(s)</span>
+                            </div>
+                            <div class="d-flex justify-content-between py-1 border-bottom small">
+                                <span class="text-secondary">Statutory Roadside Ass.</span>
+                                <span class="fw-bold text-success"><i class="bi bi-check-circle-fill me-1"></i>Included</span>
+                            </div>
+                            <div class="d-flex justify-content-between pt-2">
+                                <span class="fw-bold text-dark">Total Premium Due</span>
+                                <span class="fw-bold fs-4 text-primary font-monospace">₹{{ amount|floatformat:2 }}</span>
+                            </div>
+                        </div>
+
+
+                        <div class="p-2.5 rounded bg-white border border-info border-opacity-25 small text-secondary mb-3" style="font-size: 0.8rem;">
+                            <i class="bi bi-info-circle-fill text-info me-1"></i>
+                            <em>Upon authorization, policy status transitions to <strong>ACTIVE</strong> with leap-year-safe calendar boundaries and audit logging.</em>
+                        </div>
+                    </div>
+
+                    <div class="text-center pt-2">
+                        <a href="{% url 'home' %}" class="small text-secondary text-decoration-none">
+                            <i class="bi bi-arrow-left me-1"></i> Return to Homepage
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cardInput = document.getElementById('cardNumInput');
+    const expiryInput = document.getElementById('expiryInput');
+    const networkLabel = document.getElementById('networkLabel');
+    const luhnFeedback = document.getElementById('luhnFeedback');
+    const virtualCard = document.getElementById('virtualCardGraphic');
+    const cardBrandGraphic = document.getElementById('cardBrandGraphic');
+    const cardNumberGraphic = document.getElementById('cardNumberGraphic');
+    const cardExpiryGraphic = document.getElementById('cardExpiryGraphic');
+
+    function validateLuhn(num) {
+        const cleaned = num.replace(/\D/g, '');
+        if (cleaned.length < 13 || cleaned.length > 19) return false;
+        let sum = 0;
+        const rev = cleaned.split('').reverse().map(Number);
+        for (let i = 0; i < rev.length; i++) {
+            let digit = rev[i];
+            if (i % 2 === 1) {
+                digit *= 2;
+                if (digit > 9) digit -= 9;
+            }
+            sum += digit;
+        }
+        return (sum % 10) === 0;
+    }
+
+    function formatCardNumber(num) {
+        const cleaned = num.replace(/\D/g, '');
+        const parts = [];
+        for (let i = 0; i < cleaned.length; i += 4) {
+            parts.push(cleaned.substring(i, i + 4));
+        }
+        return parts.join(' ');
+    }
+
+    function updateCardVisuals(val) {
+        const cleaned = val.replace(/\D/g, '');
+        
+        // Update number graphic
+        if (cleaned.length > 0) {
+            cardNumberGraphic.textContent = formatCardNumber(cleaned);
+        } else {
+            cardNumberGraphic.textContent = '4532 •••• •••• 0001';
+        }
+
+        // Determine card network
+        let brand = 'visa';
+        let brandName = 'Visa';
+        if (cleaned.startsWith('4')) {
+            brand = 'visa';
+            brandName = 'VISA';
+        } else if (cleaned.startsWith('5') || (cleaned.length >= 4 && parseInt(cleaned.substring(0, 4)) >= 2221 && parseInt(cleaned.substring(0, 4)) <= 2720)) {
+            brand = 'mastercard';
+            brandName = 'MASTERCARD';
+        } else if (cleaned.startsWith('34') || cleaned.startsWith('37')) {
+            brand = 'amex';
+            brandName = 'AMEX';
+        } else if (cleaned.startsWith('6011') || cleaned.startsWith('65')) {
+            brand = 'discover';
+            brandName = 'DISCOVER';
+        } else {
+            brand = 'visa';
+            brandName = 'CARD';
+        }
+
+        virtualCard.className = 'nx-virtual-card ' + brand;
+        cardBrandGraphic.textContent = brandName;
+        networkLabel.textContent = brandName;
+
+        // Luhn feedback
+        if (cleaned.length >= 13) {
+            const isValid = validateLuhn(cleaned);
+            if (isValid) {
+                luhnFeedback.innerHTML = '<i class="bi bi-check-circle-fill me-1 text-success"></i><span class="text-success">Valid Luhn Modulo-10 checksum.</span>';
+            } else {
+                luhnFeedback.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1 text-danger"></i><span class="text-danger">Invalid checksum. Check card digits.</span>';
+            }
+        } else {
+            luhnFeedback.innerHTML = '<span class="text-muted">Enter 13-19 digit card number.</span>';
+        }
+    }
+
+    cardInput.addEventListener('input', function() {
+        updateCardVisuals(this.value);
+    });
+
+    expiryInput.addEventListener('input', function() {
+        cardExpiryGraphic.textContent = this.value || '12/28';
+    });
+
+    document.querySelectorAll('.test-card-fill').forEach(btn => {
+        btn.addEventListener('click', function() {
+            cardInput.value = this.dataset.card;
+            expiryInput.value = this.dataset.exp;
+            document.getElementById('cvvInput').value = this.dataset.cvv;
+            cardExpiryGraphic.textContent = this.dataset.exp;
+            updateCardVisuals(this.dataset.card);
+        });
+    });
+
+    // Initial setup
+    updateCardVisuals(cardInput.value);
+});
+</script>
+{% endblock %}

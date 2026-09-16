@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block title %}Issue Policy from Quotation | Nexisure{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-light">
+    <div class="container py-2" style="max-width: 800px;">
+        <div class="text-center mb-4">
+            <span class="nx-brand-badge mb-2 d-inline-block">Policy Issuance</span>
+            <h1 class="h3 fw-bold">Activate Your Vehicle Insurance Policy</h1>
+            <p class="text-secondary small">Finalize binding agreement for Quotation <span class="font-monospace text-primary fw-bold">{{ quotation.quotation_number }}</span></p>
+        </div>
+
+        <div class="row g-4">
+            <!-- Order Summary Card -->
+            <div class="col-md-6 order-md-2">
+                <div class="card shadow-sm border-0 rounded-3 p-4 bg-white mb-3">
+                    <h5 class="h6 fw-bold text-dark mb-3">Coverage & Rate Summary</h5>
+                    <dl class="row small mb-0">
+                        <dt class="col-6 text-secondary">Coverage Tier:</dt>
+                        <dd class="col-6 text-end fw-bold">{{ quotation.coverage_plan.name }}</dd>
+
+                        <dt class="col-6 text-secondary">Insured Vehicle:</dt>
+                        <dd class="col-6 text-end">
+                            {% if quotation.vehicle %}
+                                {{ quotation.vehicle.make }} {{ quotation.vehicle.model }}
+                            {% else %}
+                                General Asset
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-6 text-secondary">Insured Value (IDV):</dt>
+                        <dd class="col-6 text-end font-monospace">₹{{ quotation.vehicle_value|floatformat:2 }}</dd>
+
+                        <dt class="col-6 text-secondary">Policy Term:</dt>
+                        <dd class="col-6 text-end">{{ quotation.duration_years }} Year{% if quotation.duration_years > 1 %}s{% endif %}</dd>
+
+                        <dt class="col-6 text-secondary">Compulsory Deductible:</dt>
+                        <dd class="col-6 text-end font-monospace">₹{{ quotation.deductible_amount|floatformat:2 }}</dd>
+
+                        <dt class="col-6 text-dark fw-bold border-top pt-2">Total Amount Due:</dt>
+                        <dd class="col-6 text-end font-monospace text-primary fw-bold border-top pt-2 fs-5">
+                            ₹{{ quotation.calculated_premium|floatformat:2 }}
+                        </dd>
+                    </dl>
+                </div>
+
+                <!-- Simulation Disclaimer Alert -->
+                <div class="alert alert-warning border-warning-subtle small mb-0">
+                    <div class="d-flex align-items-start gap-2">
+                        <i class="bi bi-shield-exclamation fs-5 text-warning-emphasis"></i>
+                        <div>
+                            <strong class="d-block text-warning-emphasis">Simulated Demonstration Environment</strong>
+                            This is an educational sandbox. No real funds, cards, or statutory financial transactions will be processed.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment / Issuance Form -->
+            <div class="col-md-6 order-md-1">
+                <div class="card shadow-sm border-0 rounded-3 p-4 bg-white">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="h6 fw-bold text-dark mb-0">Policy Issuance Form</h5>
+                        <span class="badge bg-warning text-dark font-monospace fw-bold">SIMULATED PAYMENT</span>
+                    </div>
+
+                    <form method="post" action="{% url 'quotations:convert' quotation.id %}">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Simulated Card Number</label>
+                            <input type="text" class="form-control font-monospace" name="card_number" id="demoCardNum" placeholder="4532 0123 4567 8910" value="4532 0123 4567 8910" required>
+                            <div class="d-flex justify-content-between align-items-center mt-1">
+                                <span class="text-muted" style="font-size: 0.75rem;">Visa, Mastercard, Amex supported</span>
+                                <button type="button" class="btn btn-link p-0 text-primary" style="font-size: 0.75rem;" onclick="fillTestCard()">Prefill Valid Test Card</button>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-7">
+                                <label class="form-label small fw-semibold text-secondary mb-1">Expiry (MM/YY)</label>
+                                <input type="text" class="form-control font-monospace" name="expiry" id="demoExpiry" placeholder="12/28" value="12/28" required>
+                            </div>
+                            <div class="col-5">
+                                <label class="form-label small fw-semibold text-secondary mb-1">CVV / CVC</label>
+                                <input type="password" class="form-control font-monospace" name="cvv" id="demoCvv" placeholder="123" value="123" maxlength="4" required>
+                            </div>
+                        </div>
+
+                        <div class="pt-2">
+                            <button type="submit" class="btn btn-success w-100 py-2.5 fw-bold shadow-sm mb-2">
+                                <i class="bi bi-lock-fill me-1"></i> Pay ₹{{ quotation.calculated_premium|floatformat:2 }} & Issue Policy
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="text-center my-2 text-muted small">— OR —</div>
+
+                    <!-- Direct Fast-Track Conversion without Payment -->
+                    <form method="post" action="{% url 'quotations:convert' quotation.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-primary w-100 py-2 small fw-semibold">
+                            <i class="bi bi-file-earmark-check me-1"></i> Fast-Track Issue Policy (Bypass Payment)
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function fillTestCard() {
+    document.getElementById('demoCardNum').value = '4532 0123 4567 8910';
+    document.getElementById('demoExpiry').value = '12/28';
+    document.getElementById('demoCvv').value = '123';
+}
+</script>
+{% endblock %}

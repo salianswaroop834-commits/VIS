@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+
+{% block title %}Customer Dashboard | Nexisure Vehicle Insurance{% endblock %}
+
+{% block content %}
+<section class="py-4 bg-light border-bottom">
+    <div class="container">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+                <span class="badge bg-primary mb-1">Customer Workspace</span>
+                <h1 class="h3 fw-bold mb-0">Welcome back, {{ user.first_name|default:user.email }}</h1>
+                <div class="text-secondary small mt-1">Customer Code: <strong>{{ customer.customer_code|default:"CUST-PENDING" }}</strong></div>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{% url 'quotations:estimator' %}" class="nx-btn-outline py-2 small">
+                    <i class="bi bi-plus-circle me-1"></i> New Quote
+                </a>
+                <a href="{% url 'claims:create' %}" class="nx-btn-primary py-2 small">
+                    <i class="bi bi-shield-plus me-1"></i> File a Claim
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+
+        <!-- Expiring Soon Renewal Banner -->
+        {% if expiring_soon %}
+        <div class="alert alert-warning border-warning d-flex justify-content-between align-items-center mb-4 p-3 shadow-sm rounded-3">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-exclamation-circle-fill text-warning fs-4"></i>
+                <div>
+                    <strong>Renewal Alert:</strong> You have {{ expiring_soon|length }} policy(ies) expiring within 30 days. Maintain continuous liability and collision protection without coverage lapse.
+                </div>
+            </div>
+            <a href="{% url 'customers:policies' %}" class="btn btn-sm btn-warning text-dark fw-bold text-nowrap">
+                Renew Now &rarr;
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Personal KPIs -->
+        <div class="row g-3 mb-5">
+            <div class="col-md-3 col-6">
+                <div class="nx-kpi-card shadow-sm">
+                    <div>
+                        <div class="nx-kpi-value">{{ active_policies_count }}</div>
+                        <div class="nx-kpi-label">Active Policies</div>
+                    </div>
+                    <i class="bi bi-file-earmark-check text-primary fs-2"></i>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="nx-kpi-card shadow-sm">
+                    <div>
+                        <div class="nx-kpi-value">{{ vehicles_count }}</div>
+                        <div class="nx-kpi-label">Registered Vehicles</div>
+                    </div>
+                    <i class="bi bi-car-front text-info fs-2"></i>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="nx-kpi-card shadow-sm">
+                    <div>
+                        <div class="nx-kpi-value">{{ open_claims_count }}</div>
+                        <div class="nx-kpi-label">Open Claims</div>
+                    </div>
+                    <i class="bi bi-clock-history text-warning fs-2"></i>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="nx-kpi-card shadow-sm">
+                    <div>
+                        <div class="nx-kpi-value">{{ service_requests_count }}</div>
+                        <div class="nx-kpi-label">Pending Requests</div>
+                    </div>
+                    <i class="bi bi-headset text-success fs-2"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <!-- My Policies Table -->
+                <div class="nx-card mb-4 shadow-sm">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="h5 fw-bold mb-0">My Active Vehicle Policies</h4>
+                        <a href="{% url 'customers:policies' %}" class="small text-primary text-decoration-none">View All &rarr;</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle small mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Policy Number</th>
+                                    <th>Vehicle</th>
+                                    <th>Plan</th>
+                                    <th>Premium</th>
+                                    <th>Valid Until</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in policies %}
+                                <tr>
+                                    <td class="fw-bold font-monospace">
+                                        <a href="{% url 'policies:detail' p.id %}" class="text-decoration-none text-primary">{{ p.policy_number }}</a>
+                                    </td>
+                                    <td>{{ p.vehicle.make }} {{ p.vehicle.model }} ({{ p.vehicle.registration_number }})</td>
+                                    <td><span class="badge bg-light text-dark border">{{ p.coverage_plan.name }}</span></td>
+                                    <td>₹{{ p.premium_amount|floatformat:2 }}</td>
+                                    <td>{{ p.end_date|date:"M d, Y" }}</td>
+                                    <td><span class="badge bg-success">Active</span></td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">
+                                        <i class="bi bi-file-earmark-x fs-3 d-block mb-1"></i>
+                                        No active policies found. Get an instant quote to insure your vehicle.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Recent Claims -->
+                <div class="nx-card shadow-sm">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="h5 fw-bold mb-0">Recent Claims Activity</h4>
+                        <a href="{% url 'customers:claims' %}" class="small text-primary text-decoration-none">View All &rarr;</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle small mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Claim ID</th>
+                                    <th>Vehicle</th>
+                                    <th>Incident Date</th>
+                                    <th>Estimated Loss</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for c in recent_claims %}
+                                <tr>
+                                    <td class="fw-bold font-monospace text-primary">{{ c.claim_number }}</td>
+                                    <td>{{ c.policy.vehicle.registration_number }}</td>
+                                    <td>{{ c.incident_date|date:"M d, Y" }}</td>
+                                    <td>₹{{ c.estimated_loss_amount|floatformat:2 }}</td>
+                                    <td>
+                                        <span class="badge {% if c.status == 'APPROVED' %}bg-success{% elif c.status == 'REJECTED' %}bg-danger{% elif c.status == 'IN_REVIEW' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                            {{ c.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'claims:detail' c.id %}" class="btn btn-sm btn-outline-primary py-0">View</a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-3 text-muted">
+                                        No claims on record. Your vehicles are in good standing.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <!-- AI Assistant Promo -->
+                <div class="nx-card bg-primary text-white shadow-sm mb-4">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="bi bi-stars fs-4"></i>
+                        <h5 class="h6 fw-bold mb-0 text-white">Nexisure AI Assistant</h5>
+                    </div>
+                    <p class="small opacity-75 mb-3">
+                        Need to ask about policy clauses, required claim documents, or file a claim via conversational assistance?
+                    </p>
+                    <a href="{% url 'chatbot:chat' %}" class="btn btn-light btn-sm text-primary fw-bold w-100">
+                        Launch Assistant &rarr;
+                    </a>
+                </div>
+
+                <!-- Quick Policy Services -->
+                <div class="nx-card shadow-sm">
+                    <h5 class="h6 fw-bold mb-3">Quick Policy Services</h5>
+                    <div class="d-flex flex-column gap-2 small">
+                        <a href="{% url 'customers:vehicles' %}" class="text-secondary text-decoration-none py-1 border-bottom d-flex justify-content-between">
+                            <span><i class="bi bi-car-front me-2"></i>My Registered Vehicles</span>
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                        <a href="{% url 'coverage' %}" class="text-secondary text-decoration-none py-1 border-bottom d-flex justify-content-between">
+                            <span><i class="bi bi-shield-check me-2"></i>Coverage Plans & Riders</span>
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                        <a href="{% url 'claims:create' %}" class="text-secondary text-decoration-none py-1 border-bottom d-flex justify-content-between">
+                            <span><i class="bi bi-pencil-square me-2"></i>Register New Claim</span>
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                        <a href="{% url 'rag:search' %}" class="text-secondary text-decoration-none py-1 d-flex justify-content-between">
+                            <span><i class="bi bi-book me-2"></i>Search Policy Knowledge Base</span>
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

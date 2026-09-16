@@ -1,0 +1,50 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Django database and media
+*.sqlite3
+*.db
+*.db-journal
+db.sqlite3-journal
+media/
+staticfiles/
+scratch/
+
+# Test and coverage artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# Machine Learning & MLOps tracking
+mlruns/
+mlartifacts/
+.mlflow/
+mlruns.db
+
+# IDE configurations
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS generated files
+Thumbs.db
+Desktop.ini
+.DS_Store

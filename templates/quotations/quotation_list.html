@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}My Quotations | Nexisure Vehicle Insurance{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-light">
+    <div class="container py-2">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+            <div>
+                <span class="nx-brand-badge mb-1 d-inline-block">Customer Portal</span>
+                <h1 class="h3 fw-bold mb-0">My Insurance Quotations</h1>
+            </div>
+            <a href="{% url 'quotations:create' %}" class="btn btn-primary fw-semibold shadow-sm">
+                <i class="bi bi-plus-circle me-1"></i> New Quotation
+            </a>
+        </div>
+
+        <div class="card shadow-sm border-0 rounded-3 overflow-hidden bg-white">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light text-secondary small text-uppercase">
+                        <tr>
+                            <th class="ps-4">Quotation #</th>
+                            <th>Vehicle</th>
+                            <th>Plan</th>
+                            <th>Term</th>
+                            <th>Total Premium</th>
+                            <th>Status</th>
+                            <th>Valid Until</th>
+                            <th class="text-end pe-4">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for quote in quotations %}
+                            <tr>
+                                <td class="ps-4 font-monospace fw-bold text-primary">
+                                    <a href="{% url 'quotations:detail' quote.id %}" class="text-decoration-none">
+                                        {{ quote.quotation_number }}
+                                    </a>
+                                </td>
+                                <td>
+                                    {% if quote.vehicle %}
+                                        <span class="fw-semibold text-dark">{{ quote.vehicle.make }} {{ quote.vehicle.model }}</span>
+                                        <div class="text-muted small font-monospace">{{ quote.vehicle.registration_number }}</div>
+                                    {% else %}
+                                        <span class="text-muted small">Manual IDV (₹{{ quote.vehicle_value|floatformat:0 }})</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="fw-medium text-dark">{{ quote.coverage_plan.name }}</span>
+                                    {% if quote.selected_features.exists %}
+                                        <div class="text-muted small">+{{ quote.selected_features.count }} rider(s)</div>
+                                    {% endif %}
+                                </td>
+                                <td>{{ quote.duration_years }} Year{% if quote.duration_years > 1 %}s{% endif %}</td>
+                                <td class="font-monospace fw-bold text-dark fs-6">
+                                    ₹{{ quote.calculated_premium|floatformat:2 }}
+                                </td>
+                                <td>
+                                    {% if quote.status == 'DRAFT' %}
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning px-2.5 py-1">Draft</span>
+                                    {% elif quote.status == 'ACCEPTED' %}
+                                        <span class="badge bg-primary-subtle text-primary border border-primary px-2.5 py-1">Accepted</span>
+                                    {% elif quote.status == 'CONVERTED' %}
+                                        <span class="badge bg-success-subtle text-success border border-success px-2.5 py-1">Active Policy</span>
+                                    {% elif quote.status == 'EXPIRED' %}
+                                        <span class="badge bg-secondary-subtle text-secondary border px-2.5 py-1">Expired</span>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark border">{{ quote.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-muted small font-monospace">
+                                    {{ quote.valid_until|date:"d M Y" }}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a href="{% url 'quotations:detail' quote.id %}" class="btn btn-sm btn-outline-primary py-1 px-2.5">
+                                        View <i class="bi bi-chevron-right ms-0.5"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center py-5 text-muted">
+                                    <div class="py-3">
+                                        <i class="bi bi-file-earmark-text text-secondary display-6 d-block mb-3"></i>
+                                        <p class="mb-2 fw-medium">You haven't generated any vehicle insurance quotations yet.</p>
+                                        <a href="{% url 'quotations:create' %}" class="btn btn-sm btn-primary">
+                                            Calculate Your First Quote
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

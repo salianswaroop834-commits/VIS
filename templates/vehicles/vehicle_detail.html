@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ vehicle.make }} {{ vehicle.model }} ({{ vehicle.registration_number }}) | Nexisure{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-white">
+    <div class="container py-2 max-w-900">
+        <!-- Header & Breadcrumbs -->
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+            <div>
+                <a href="{% url 'customers:vehicles' %}" class="small text-secondary text-decoration-none">
+                    <i class="bi bi-arrow-left"></i> Back to My Vehicles
+                </a>
+                <h1 class="h3 fw-bold mt-2 mb-0">{{ vehicle.make }} {{ vehicle.model }}</h1>
+                <span class="font-monospace text-primary fw-bold fs-5">{{ vehicle.registration_number }}</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge {% if vehicle.is_active %}bg-success{% else %}bg-secondary{% endif %} fs-6 px-3 py-2">
+                    {% if vehicle.is_active %}Active Asset{% else %}Archived / Inactive{% endif %}
+                </span>
+                {% if active_policy %}
+                    <span class="badge bg-primary fs-6 px-3 py-2">
+                        <i class="bi bi-shield-check me-1"></i> Policy Active
+                    </span>
+                {% else %}
+                    <span class="badge bg-warning text-dark fs-6 px-3 py-2">
+                        <i class="bi bi-shield-exclamation me-1"></i> Uninsured
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Left Column: Specs, Policy Coverage & Quotations -->
+            <div class="col-md-8">
+                <!-- Vehicle Asset Specifications -->
+                <div class="nx-card shadow-sm mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="h5 fw-bold mb-0">Vehicle Specifications</h4>
+                        <span class="badge bg-light text-dark border">{{ vehicle.get_vehicle_type_display }}</span>
+                    </div>
+                    <dl class="row mb-0 small">
+                        <dt class="col-4 text-secondary">Make & Model:</dt>
+                        <dd class="col-8 fw-bold">{{ vehicle.make }} {{ vehicle.model }}</dd>
+
+                        <dt class="col-4 text-secondary">Registration Plate:</dt>
+                        <dd class="col-8 font-monospace fw-bold text-dark">{{ vehicle.registration_number }}</dd>
+
+                        <dt class="col-4 text-secondary">Manufacture Year:</dt>
+                        <dd class="col-8">{{ vehicle.manufacture_year }}</dd>
+
+                        <dt class="col-4 text-secondary">Chassis / VIN:</dt>
+                        <dd class="col-8 font-monospace">{{ vehicle.chassis_number }}</dd>
+
+                        <dt class="col-4 text-secondary">Engine Number:</dt>
+                        <dd class="col-8 font-monospace">{% if vehicle.engine_number %}{{ vehicle.engine_number }}{% else %}<span class="text-muted">Not Provided</span>{% endif %}</dd>
+
+                        <dt class="col-4 text-secondary">Fuel / Powertrain:</dt>
+                        <dd class="col-8">{{ vehicle.get_fuel_type_display }}</dd>
+
+                        <dt class="col-4 text-secondary">Usage Classification:</dt>
+                        <dd class="col-8">{{ vehicle.get_usage_type_display }}</dd>
+
+                        <dt class="col-4 text-secondary">Insured Declared Value:</dt>
+                        <dd class="col-8 font-monospace text-success fw-bold fs-6">₹{{ vehicle.vehicle_value|floatformat:2 }}</dd>
+                    </dl>
+                </div>
+
+                <!-- Active Policy Coverage Status -->
+                <div class="nx-card shadow-sm mb-4">
+                    <h4 class="h5 fw-bold mb-3">Insurance Protection Status</h4>
+                    {% if active_policy %}
+                        <div class="p-3 rounded bg-light border border-success border-opacity-25">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <span class="badge bg-success mb-1">Active Policy</span>
+                                    <h5 class="h6 fw-bold mb-0">
+                                        <a href="{% url 'policies:detail' active_policy.id %}" class="text-decoration-none text-primary font-monospace">
+                                            {{ active_policy.policy_number }}
+                                        </a>
+                                    </h5>
+                                    <span class="text-muted small">{{ active_policy.coverage_plan.name }}</span>
+                                </div>
+                                <div class="text-end">
+                                    <span class="small text-secondary d-block">Premium</span>
+                                    <span class="font-monospace fw-bold text-primary">₹{{ active_policy.premium_amount|floatformat:2 }}</span>
+                                </div>
+                            </div>
+                            <hr class="my-2">
+                            <div class="d-flex justify-content-between small text-secondary">
+                                <span>Term: {{ active_policy.start_date|date:"M d, Y" }} &mdash; {{ active_policy.end_date|date:"M d, Y" }}</span>
+                                <a href="{% url 'policies:detail' active_policy.id %}" class="fw-semibold text-primary text-decoration-none">
+                                    View Policy Details <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="p-3 rounded bg-light border border-warning border-opacity-50 text-center py-4">
+                            <i class="bi bi-shield-exclamation fs-2 text-warning mb-2 d-block"></i>
+                            <h5 class="h6 fw-bold mb-1">No Active Insurance Policy</h5>
+                            <p class="text-secondary small max-w-500 mx-auto mb-3">
+                                This vehicle is currently uninsured. Generate an instant official quotation or browse coverage plans to bind protection.
+                            </p>
+                            {% if vehicle.is_active %}
+                                <a href="{% url 'quotations:estimator' %}?vehicle_id={{ vehicle.id }}&vehicle_value={{ vehicle.vehicle_value }}" class="nx-btn-primary btn-sm py-2">
+                                    <i class="bi bi-shield-plus"></i> Get Instant Quote for this Vehicle
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Related Quotations for this Vehicle -->
+                <div class="nx-card shadow-sm mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="h5 fw-bold mb-0">Quotation History</h4>
+                        {% if vehicle.is_active %}
+                            <a href="{% url 'quotations:estimator' %}?vehicle_id={{ vehicle.id }}&vehicle_value={{ vehicle.vehicle_value }}" class="small text-primary text-decoration-none fw-semibold">
+                                + New Quote
+                            </a>
+                        {% endif %}
+                    </div>
+                    {% if quotations %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle small mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Quotation #</th>
+                                        <th>Coverage Plan</th>
+                                        <th>Premium</th>
+                                        <th>Valid Until</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for q in quotations %}
+                                        <tr>
+                                            <td class="font-monospace fw-bold">
+                                                <a href="{% url 'quotations:detail' q.id %}" class="text-decoration-none">{{ q.quotation_number }}</a>
+                                            </td>
+                                            <td>{{ q.coverage_plan.name }}</td>
+                                            <td class="font-monospace text-primary fw-bold">₹{{ q.calculated_premium|floatformat:2 }}</td>
+                                            <td>{{ q.valid_until|date:"M d, Y" }}</td>
+                                            <td>
+                                                <span class="badge {% if q.status == 'DRAFT' %}bg-primary{% elif q.status == 'ACCEPTED' %}bg-success{% elif q.status == 'CONVERTED' %}bg-info text-dark{% else %}bg-secondary{% endif %}">
+                                                    {{ q.status }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'quotations:detail' q.id %}" class="btn btn-sm btn-outline-primary py-0">View</a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-secondary small mb-0">No past or active quotation drafts for this vehicle.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Right Column: Ownership Context & Operational Actions -->
+            <div class="col-md-4">
+                <!-- Ownership Card -->
+                <div class="nx-card shadow-sm mb-4">
+                    <h5 class="h6 fw-bold mb-3">Owner Profile Context</h5>
+                    <dl class="row small mb-0">
+                        <dt class="col-5 text-secondary">Customer:</dt>
+                        <dd class="col-7 fw-bold">{{ vehicle.customer.user.get_full_name|default:vehicle.customer.user.email }}</dd>
+
+                        <dt class="col-5 text-secondary">Account ID:</dt>
+                        <dd class="col-7 font-monospace">{{ vehicle.customer.customer_code }}</dd>
+
+                        <dt class="col-5 text-secondary">Registered:</dt>
+                        <dd class="col-7">{{ vehicle.created_at|date:"M d, Y" }}</dd>
+                    </dl>
+                </div>
+
+                <!-- Actions Card -->
+                <div class="nx-card shadow-sm mb-4">
+                    <h5 class="h6 fw-bold mb-3">Vehicle Asset Actions</h5>
+
+                    {% if vehicle.is_active %}
+                        <a href="{% url 'vehicles:edit' vehicle.id %}" class="nx-btn-outline btn-sm w-100 justify-content-center mb-2">
+                            <i class="bi bi-pencil-square"></i> Edit Vehicle Details
+                        </a>
+
+                        <a href="{% url 'quotations:estimator' %}?vehicle_id={{ vehicle.id }}&vehicle_value={{ vehicle.vehicle_value }}" class="nx-btn-primary btn-sm w-100 justify-content-center mb-2">
+                            <i class="bi bi-calculator"></i> Calculate Premium Quote
+                        </a>
+
+                        {% if active_policy %}
+                            <div class="alert alert-info border-info-subtle small mb-0 py-2">
+                                <i class="bi bi-lock-fill text-info me-1"></i>
+                                <strong>Active Policy Lock</strong><br>
+                                Deactivation is locked while covered under Policy <span class="font-monospace fw-bold">{{ active_policy.policy_number }}</span>.
+                            </div>
+                        {% else %}
+                            <button type="button" class="btn btn-sm btn-outline-danger w-100 justify-content-center" data-bs-toggle="modal" data-bs-target="#deactivateModal">
+                                <i class="bi bi-archive"></i> Deactivate Vehicle Asset
+                            </button>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-secondary small mb-0">
+                            <i class="bi bi-archive-fill me-1"></i> This vehicle asset is archived / inactive.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Deactivate Confirmation Modal -->
+{% if vehicle.is_active and not active_policy %}
+<div class="modal fade" id="deactivateModal" tabindex="-1" aria-labelledby="deactivateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold" id="deactivateModalLabel">Confirm Vehicle Deactivation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-secondary small mb-2">
+                    Are you sure you want to deactivate <strong class="text-dark">{{ vehicle.make }} {{ vehicle.model }} ({{ vehicle.registration_number }})</strong>?
+                </p>
+                <div class="alert alert-warning small border-warning-subtle mb-0">
+                    <i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>
+                    Deactivating this vehicle will archive it from your active garage. Historical policies and claims remain permanently preserved.
+                </div>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{% url 'vehicles:deactivate' vehicle.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-danger">
+                        <i class="bi bi-archive"></i> Confirm Deactivation
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

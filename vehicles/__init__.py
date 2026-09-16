@@ -1,0 +1,1 @@
+"""Vehicle asset management package."""

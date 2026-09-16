@@ -1,0 +1,756 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Operational Analytics & Actuarial EDA | Nexisure Operations{% endblock %}
+
+{% block extra_css %}
+<!-- Plotly Engine loaded in <head> so window.Plotly is ready when chart inline scripts execute -->
+<script src="{% static 'js/plotly.min.js' %}"></script>
+<script>
+    if (typeof Plotly === 'undefined') {
+        document.write('<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"><\/script>');
+    }
+</script>
+<style>
+    .chart-container {
+        width: 100%;
+        min-height: 375px;
+        height: 375px;
+        position: relative;
+        display: block;
+    }
+    .chart-container .plotly-graph-div {
+        width: 100% !important;
+        height: 370px !important;
+        min-height: 370px !important;
+    }
+    .chart-container > div {
+        width: 100% !important;
+        height: 370px !important;
+    }
+    /* Strictly suppress Plotly floating toolbar & floater icons across all diagrams */
+    .modebar-container,
+    .modebar,
+    .js-plotly-plot .plotly .modebar,
+    .plotly .modebar-container,
+    .plotly .modebar {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+    .nx-filter-btn {
+        padding: 5px 14px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        border-radius: 9999px;
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        color: #475569;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .nx-filter-btn:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+    }
+    .nx-filter-btn.active {
+        background: #0284c7;
+        color: #ffffff;
+        border-color: #0284c7;
+        box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-4 bg-light border-bottom">
+    <div class="container">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+                <span class="nx-brand-badge mb-1 d-inline-block">Actuarial Intelligence & Portfolio Telemetry</span>
+                <h1 class="h3 fw-bold mb-0">Vehicle Portfolio Analytics & Exploratory Data Analysis</h1>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 fs-7 fw-semibold">
+                    <i class="bi bi-database-check me-1"></i> {{ kpis.dataset_name }} (N={{ kpis.dataset_records_count|default:1485 }})
+                </span>
+                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 fs-7 fw-semibold">
+                    <i class="bi bi-shield-lock-fill me-1"></i> 24 Features Audited
+                </span>
+                <a href="{% url 'analytics:download-csv' %}" class="btn btn-sm btn-outline-primary px-3 py-1.5 fw-medium">
+                    <i class="bi bi-download me-1"></i> Export Raw CSV
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-5 bg-white">
+    <div class="container py-2">
+        <!-- Live Database Portfolio Section (Nexisure Core ORM Telemetry) -->
+        <div class="card border-0 shadow-sm mb-5 bg-white">
+            <div class="card-header bg-white border-bottom py-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+                <div>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold px-2 py-1 mb-1">Live Database Telemetry</span>
+                    <h4 class="h5 fw-bold mb-0 text-dark">
+                        <i class="bi bi-hdd-network-fill text-primary me-2"></i>Live Nexisure Database Portfolio Telemetry
+                    </h4>
+                    <small class="text-muted">Real-time aggregations from live Policy, Vehicle, Customer, Claim, and Service Request tables</small>
+                </div>
+                <!-- Server-side Filters -->
+                <form method="get" class="d-flex flex-wrap align-items-center gap-2">
+                    <input type="date" name="start_date" class="form-control form-control-sm" style="width: 140px;" value="{{ applied_filters.start_date|default:'' }}" placeholder="Start Date">
+                    <input type="date" name="end_date" class="form-control form-control-sm" style="width: 140px;" value="{{ applied_filters.end_date|default:'' }}" placeholder="End Date">
+                    <select name="status" class="form-select form-select-sm" style="width: 130px;">
+                        <option value="">All Statuses</option>
+                        <option value="ACTIVE" {% if applied_filters.status == 'ACTIVE' %}selected{% endif %}>Active</option>
+                        <option value="EXPIRED" {% if applied_filters.status == 'EXPIRED' %}selected{% endif %}>Expired</option>
+                        <option value="CANCELLED" {% if applied_filters.status == 'CANCELLED' %}selected{% endif %}>Cancelled</option>
+                        <option value="RENEWED" {% if applied_filters.status == 'RENEWED' %}selected{% endif %}>Renewed</option>
+                    </select>
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <i class="bi bi-funnel-fill me-1"></i>Filter
+                    </button>
+                    {% if applied_filters.start_date or applied_filters.end_date or applied_filters.status %}
+                        <a href="{% url 'analytics:dashboard' %}" class="btn btn-sm btn-outline-secondary">Reset</a>
+                    {% endif %}
+                </form>
+            </div>
+            <div class="card-body p-4">
+                {% if not live_portfolio.has_live_data %}
+                <div class="alert alert-info border-0 shadow-sm d-flex align-items-center mb-0">
+                    <i class="bi bi-info-circle-fill fs-4 text-primary me-3"></i>
+                    <div>
+                        <div class="fw-semibold">No active live portfolio policies or customer records in database yet.</div>
+                        <div class="small text-muted">As users bind policies, register vehicles, and file claims, this live telemetry section updates automatically using Django ORM aggregations. Historical actuarial baseline EDA is presented below.</div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="row g-3 mb-4">
+                    <div class="col-6 col-lg-2">
+                        <div class="p-3 bg-light rounded border text-center">
+                            <div class="text-secondary small fw-semibold text-uppercase">Active Policies</div>
+                            <div class="h4 fw-bold text-dark mb-0">{{ live_portfolio.kpis.active_policies }}</div>
+                            <div class="text-muted small">of {{ live_portfolio.kpis.total_policies }} total</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-lg-2">
+                        <div class="p-3 bg-light rounded border text-center">
+                            <div class="text-secondary small fw-semibold text-uppercase">Customers</div>
+                            <div class="h4 fw-bold text-dark mb-0">{{ live_portfolio.kpis.total_customers }}</div>
+                            <div class="text-muted small">{{ live_portfolio.kpis.active_customers }} active</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-lg-2">
+                        <div class="p-3 bg-light rounded border text-center">
+                            <div class="text-secondary small fw-semibold text-uppercase">Vehicles</div>
+                            <div class="h4 fw-bold text-dark mb-0">{{ live_portfolio.kpis.total_vehicles }}</div>
+                            <div class="text-muted small">{{ live_portfolio.kpis.active_vehicles }} active</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-lg-3">
+                        <div class="p-3 bg-light rounded border text-center">
+                            <div class="text-secondary small fw-semibold text-uppercase">Claims Filed</div>
+                            <div class="h4 fw-bold text-danger mb-0">{{ live_portfolio.kpis.total_claims }}</div>
+                            <div class="text-muted small">{{ live_portfolio.kpis.pending_claims }} pending / {{ live_portfolio.kpis.approved_claims }} approved</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-lg-3">
+                        <div class="p-3 bg-light rounded border text-center">
+                            <div class="text-secondary small fw-semibold text-uppercase">Gross Premium Volume</div>
+                            <div class="h4 fw-bold text-success mb-0">₹{{ live_portfolio.kpis.gross_premium_written|floatformat:2 }}</div>
+                            <div class="text-muted small">Loss Ratio: {{ live_portfolio.kpis.loss_ratio_pct }}%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-white">
+                            <div class="fw-semibold small text-uppercase mb-2 text-secondary">Live Policies by Plan</div>
+                            {% if live_portfolio.distributions.plans %}
+                            <ul class="list-group list-group-flush">
+                                {% for p in live_portfolio.distributions.plans %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-1">
+                                    <span>{{ p.plan_name }} <span class="badge bg-light text-secondary border ms-1">{{ p.plan_code }}</span></span>
+                                    <span class="badge bg-primary rounded-pill">{{ p.count }} ({{ p.percentage }}%)</span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                            {% else %}
+                            <p class="text-muted small mb-0">No policy plan distributions recorded yet.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-white">
+                            <div class="fw-semibold small text-uppercase mb-2 text-secondary">Live Claims by Status</div>
+                            {% if live_portfolio.distributions.claim_statuses %}
+                            <ul class="list-group list-group-flush">
+                                {% for c in live_portfolio.distributions.claim_statuses %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-1">
+                                    <span>{{ c.status }}</span>
+                                    <span class="badge bg-secondary rounded-pill">{{ c.count }} ({{ c.percentage }}%)</span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                            {% else %}
+                            <p class="text-muted small mb-0">No claims submitted yet.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Executive KPI Cards: Row 1 Financials & Underwriting (Actuarial Baseline) -->
+        <div class="row g-3 mb-3">
+            <div class="col-6 col-lg-3">
+                <div class="nx-card p-3 border-start border-primary border-4 shadow-sm h-100">
+                    <div class="text-secondary small fw-semibold text-uppercase">Total Policies</div>
+                    <div class="h3 fw-bold text-dark mb-0">{{ kpis.total_policies|default:0 }}</div>
+                    <div class="text-muted small mt-1">Active portfolio records</div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="nx-card p-3 border-start border-success border-4 shadow-sm h-100">
+                    <div class="text-secondary small fw-semibold text-uppercase">Gross Premium Written</div>
+                    <div class="h3 fw-bold text-success mb-0">₹{{ kpis.total_premium|floatformat:0 }}</div>
+                    <div class="text-muted small mt-1">Total revenue collected</div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="nx-card p-3 border-start border-danger border-4 shadow-sm h-100">
+                    <div class="text-secondary small fw-semibold text-uppercase">Incurred Losses</div>
+                    <div class="h3 fw-bold text-danger mb-0">₹{{ kpis.total_incurred_loss|floatformat:0 }}</div>
+                    <div class="text-muted small mt-1">Net loss ratio: <strong>{{ kpis.loss_ratio_pct }}%</strong></div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="nx-card p-3 border-start border-warning border-4 shadow-sm h-100">
+                    <div class="text-secondary small fw-semibold text-uppercase">Claim Frequency</div>
+                    <div class="h3 fw-bold text-dark mb-0">{{ kpis.claim_frequency_pct }}%</div>
+                    <div class="text-muted small mt-1">{{ kpis.claims_filed }} claims filed</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Executive KPI Cards: Row 2 Operational & Risk Telemetry -->
+        <div class="row g-3 mb-5">
+            <div class="col-6 col-lg-3">
+                <div class="nx-card p-3 border-start border-info border-4 shadow-sm h-100">
+                    <div class="text-secondary small fw-semibold text-uppercase">Avg Claim Severity</div>
+                    <div class="h3 fw-bold text-dark mb-0">₹{{ kpis.avg_claim_severity|floatformat:0 }}</div>
+                    <div class="text-muted small mt-1">Per positive loss incident</div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="nx-card p-3 border-start border-secondary border-4 shadow-sm h-100">
+                    <div class="text-secondary small fw-semibold text-uppercase">Fleet Avg IDV</div>
+                    <div class="h3 fw-bold text-dark mb-0">₹{{ kpis.avg_vehicle_idv|floatformat:0 }}</div>
+                    <div class="text-muted small mt-1">Insured declared vehicle value</div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="nx-card p-3 border-start border-danger border-4 shadow-sm h-100">
+                    <div class="text-secondary small fw-semibold text-uppercase">Fraud Detection Rate</div>
+                    <div class="h3 fw-bold text-danger mb-0">{{ kpis.fraud_rate_pct }}%</div>
+                    <div class="text-muted small mt-1">{{ kpis.fraud_claims_count }} suspicious claims flagged</div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="nx-card p-3 border-start border-primary border-4 shadow-sm h-100">
+                    <div class="text-secondary small fw-semibold text-uppercase">Avg Settlement Cycle</div>
+                    <div class="h3 fw-bold text-primary mb-0">{{ kpis.avg_settlement_days }} Days</div>
+                    <div class="text-muted small mt-1">From claim filing to resolution</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 1: Portfolio Composition & Tier Economics -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3 pb-2 border-bottom">
+            <div>
+                <h4 class="h5 fw-bold mb-0 text-dark">
+                    <i class="bi bi-pie-chart-fill text-primary me-2"></i>Portfolio Composition & Pricing Tiers
+                </h4>
+                <div class="text-muted small">Updated from Curated Actuarial Telemetry</div>
+            </div>
+            <span class="badge bg-light text-dark border px-3 py-2 fw-semibold">
+                <i class="bi bi-layers me-1 text-primary"></i> 1,485 Active Policies Underwritten
+            </span>
+        </div>
+
+        <div class="row g-4 mb-5">
+            <div class="col-lg-6">
+                <div class="nx-card shadow-sm p-4 h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="h6 fw-bold mb-0"><i class="bi bi-bar-chart-fill text-primary me-2"></i>Portfolio Volume & Premium Revenue</h5>
+                            <span class="badge bg-light text-dark border">By Vehicle Type</span>
+                        </div>
+                        <div class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 mb-3 small fw-normal">
+                            {{ kpis.substat_vehicle }}
+                        </div>
+                        <div class="chart-container">
+                            {{ chart_vehicle_portfolio|safe }}
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-2 border-top text-muted small">
+                        <i class="bi bi-info-circle text-primary me-1"></i> Sedans (₹179k premium) and Hatchbacks (₹134k) form 57% of portfolio volume; SUVs exhibit lowest claim frequency (10.1%).
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="nx-card shadow-sm p-4 h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="h6 fw-bold mb-0"><i class="bi bi-pie-chart-fill text-indigo me-2"></i>Claim Frequency vs Loss Ratio</h5>
+                            <span class="badge bg-light text-dark border">By Coverage Tier</span>
+                        </div>
+                        <div class="badge bg-indigo-subtle text-indigo border border-indigo-subtle px-2 py-1 mb-3 small fw-normal">
+                            {{ kpis.substat_tier }}
+                        </div>
+                        <div class="chart-container">
+                            {{ chart_loss_ratio|safe }}
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-2 border-top text-muted small">
+                        <i class="bi bi-info-circle text-primary me-1"></i> Third-Party statutory coverage experiences disproportionate claim severity relative to premium, requiring baseline tariff review.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Severity Distribution & Driver Risk Matrix -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3 pb-2 border-bottom">
+            <div>
+                <h4 class="h5 fw-bold mb-0 text-dark">
+                    <i class="bi bi-speedometer2 text-danger me-2"></i>Risk Heatmaps & Loss Distribution
+                </h4>
+                <div class="text-muted small">Actuarial Loss Modeling</div>
+            </div>
+            <span class="badge bg-light text-dark border px-3 py-2 fw-semibold">
+                <i class="bi bi-exclamation-triangle me-1 text-danger"></i> 209 Claims • ₹1,065,659 Incurred Losses
+            </span>
+        </div>
+
+        <div class="row g-4 mb-5">
+            <div class="col-lg-6">
+                <div class="nx-card shadow-sm p-4 h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="h6 fw-bold mb-0"><i class="bi bi-graph-up text-warning me-2"></i>Claim Severity Distribution</h5>
+                            <span class="badge bg-light text-dark border">Non-Zero Claims</span>
+                        </div>
+                        <div class="badge bg-warning-subtle text-dark border border-warning-subtle px-2 py-1 mb-3 small fw-normal">
+                            {{ kpis.substat_severity }}
+                        </div>
+                        <div class="chart-container">
+                            {{ chart_severity|safe }}
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-2 border-top text-muted small">
+                        <i class="bi bi-info-circle text-warning me-1"></i> Positively skewed loss distribution; 75% of claim settlements resolve under ₹6,500, with long tail severity up to ₹24.7k.
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="nx-card shadow-sm p-4 h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="h6 fw-bold mb-0"><i class="bi bi-grid-3x3-gap-fill text-danger me-2"></i>Risk Heatmap Matrix</h5>
+                            <span class="badge bg-light text-dark border">Driver Age vs Usage</span>
+                        </div>
+                        <div class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 mb-3 small fw-normal">
+                            {{ kpis.substat_risk }}
+                        </div>
+                        <div class="chart-container">
+                            {{ chart_risk|safe }}
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-2 border-top text-muted small">
+                        <i class="bi bi-info-circle text-danger me-1"></i> Young drivers (18–24) exhibit ~3x higher loss incidence across rideshare and commercial duty cycles compared to adult cohorts.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Geographic Risk & Security Telematics -->
+        {% if chart_geographic_risk or chart_security_and_parking %}
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3 pb-2 border-bottom">
+            <div>
+                <h4 class="h5 fw-bold mb-0 text-dark">
+                    <i class="bi bi-geo-alt-fill text-success me-2"></i>Geographic Exposure & Telematics Security
+                </h4>
+                <div class="text-muted small">Location & Device Insights</div>
+            </div>
+            <span class="badge bg-light text-dark border px-3 py-2 fw-semibold">
+                <i class="bi bi-shield-check me-1 text-success"></i> 4 Territorial Zones • 3 Parking Environments
+            </span>
+        </div>
+
+        <div class="row g-4 mb-5">
+            {% if chart_geographic_risk %}
+            <div class="col-lg-6">
+                <div class="nx-card shadow-sm p-4 h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="h6 fw-bold mb-0"><i class="bi bi-geo-fill text-primary me-2"></i>Geographic Risk Zone Exposure</h5>
+                            <span class="badge bg-light text-dark border">Urban vs Rural</span>
+                        </div>
+                        <div class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 mb-3 small fw-normal">
+                            {{ kpis.substat_geo }}
+                        </div>
+                        <div class="chart-container">
+                            {{ chart_geographic_risk|safe }}
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-2 border-top text-muted small">
+                        <i class="bi bi-info-circle text-primary me-1"></i> Metropolitan and Urban corridors account for 62.7% of platform policies and 66.7% of total incurred losses.
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if chart_security_and_parking %}
+            <div class="col-lg-6">
+                <div class="nx-card shadow-sm p-4 h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="h6 fw-bold mb-0"><i class="bi bi-shield-check text-success me-2"></i>Parking Security & Anti-Theft Device</h5>
+                            <span class="badge bg-light text-dark border">Telematics & Parking</span>
+                        </div>
+                        <div class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 mb-3 small fw-normal">
+                            {{ kpis.substat_security }}
+                        </div>
+                        <div class="chart-container">
+                            {{ chart_security_and_parking|safe }}
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-2 border-top text-muted small">
+                        <i class="bi bi-info-circle text-success me-1"></i> Anti-theft technology consistently lowers claim rates across all parking environments (e.g. 17.9% → 15.1% in street parking).
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Authentic Actuarial Dataset Explorer Table Section -->
+        <div class="mb-5">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3 pb-2 border-bottom">
+                <div>
+                    <h4 class="h5 fw-bold mb-0 text-dark">
+                        <i class="bi bi-table text-primary me-2"></i>Authentic Actuarial Dataset Explorer
+                    </h4>
+                    <div class="text-muted small">Every single record (N=1,485) loaded live from curated_vehicle_insurance_dataset.csv with 24 audited attributes</div>
+                </div>
+                <div class="d-flex gap-2 align-items-center">
+                    <a href="{% url 'analytics:download-csv' %}" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-download me-1"></i> Download Full CSV
+                    </a>
+                </div>
+            </div>
+
+            <div class="nx-card shadow-sm p-4">
+                <!-- Search & Filters Toolbar -->
+                <div class="row g-2 align-items-center mb-3">
+                    <div class="col-md-5">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                            <input type="text" id="datasetSearchInput" class="form-control border-start-0" placeholder="Filter by vehicle, fuel, usage, territory, credit tier...">
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <div class="d-flex flex-wrap gap-1 justify-content-md-end" id="filterButtonGroup">
+                            <button type="button" class="nx-filter-btn active" data-filter="all">All (1,485)</button>
+                            <button type="button" class="nx-filter-btn" data-filter="claims">Claims Only (209)</button>
+                            <button type="button" class="nx-filter-btn" data-filter="fraud">Fraud Flagged (10)</button>
+                            <button type="button" class="nx-filter-btn" data-filter="clean">Clean (1,276)</button>
+                            <button type="button" class="nx-filter-btn" data-filter="urban">Urban/Metro</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="table-responsive" style="max-height: 520px; overflow-y: auto;">
+                    <table class="table table-hover table-sm align-middle mb-0" id="authenticRecordsTable">
+                        <thead class="table-light sticky-top" style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                            <tr>
+                                <th style="width: 50px;">#</th>
+                                <th>Vehicle & Fuel</th>
+                                <th>Declared IDV</th>
+                                <th>NCAP</th>
+                                <th>Driver Profile</th>
+                                <th>Usage & Zone</th>
+                                <th>Parking / Security</th>
+                                <th>Credit Tier</th>
+                                <th>Gross Premium</th>
+                                <th>Claim Status</th>
+                                <th>Fraud Flag</th>
+                                <th>Settlement</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recordsTableBody" style="font-size: 0.83rem;">
+                            {% for r in initial_records.records %}
+                            <tr>
+                                <td class="fw-semibold text-secondary">{{ r.row_num }}</td>
+                                <td>
+                                    <span class="fw-bold text-dark">{{ r.vehicle_type }}</span>
+                                    <span class="badge bg-light text-secondary border ms-1">{{ r.fuel_type }}</span>
+                                          <td>₹{{ r.vehicle_value|floatformat:0 }}</td>
+                                <td>
+                                    <span class="badge bg-warning bg-opacity-10 text-dark border border-warning border-opacity-25">
+                                        {{ r.safety_rating }} ★
+                                    </span>
+                                </td>
+                                <td>
+                                    <div>{{ r.driver_age }} yrs</div>
+                                    <small class="text-muted">{{ r.experience }} yrs exp &bull; {{ r.annual_mileage }} mi/yr</small>
+                                </td>
+                                <td>
+                                    <div><span class="badge bg-secondary-subtle text-secondary">{{ r.usage_type }}</span></div>
+                                    <small class="text-muted">{{ r.risk_zone }}</small>
+                                </td>
+                                <td>
+                                    <div class="small">{{ r.parking_location }}</div>
+                                    {% if r.anti_theft %}
+                                     <span class="badge bg-success-subtle text-success small">Protected</span>
+                                    {% else %}
+                                     <span class="badge bg-light text-muted border small">Standard</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-info-subtle text-dark">{{ r.credit_score }}</span>
+                                </td>
+                                <td class="fw-bold text-dark">₹{{ r.annual_premium|floatformat:2 }}</td>
+                                <td>
+                                    {% if r.claim_filed %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-semibold">
+                                        FILED (₹{{ r.claim_amount|floatformat:0 }})
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted small"><i class="bi bi-check2 text-success me-1"></i>No Claim (₹0)</span>
+                                    {% endif %}
+                                </td>                         </td>
+                                <td>
+                                    {% if r.fraud_flag %}
+                                    <span class="badge bg-danger text-white">FRAUD FLAGGED</span>
+                                    {% else %}
+                                    <span class="badge bg-light text-muted border">Clean</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if r.claim_filed %}
+                                    <span class="text-primary fw-medium">{{ r.settlement_days }} days</span>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination Footer -->
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2 mt-3 pt-3 border-top">
+                    <div class="text-muted small" id="paginationStatus">
+                        Showing <strong>{{ initial_records.start_idx }}–{{ initial_records.end_idx }}</strong> of <strong>{{ initial_records.total_count }}</strong> authentic records
+                    </div>
+                    <div class="d-flex gap-1" id="paginationControls">
+                        <button class="btn btn-sm btn-outline-secondary" id="prevPageBtn" disabled>
+                            <i class="bi bi-chevron-left"></i> Previous
+                        </button>
+                        <span class="btn btn-sm btn-light border disabled fw-medium" id="pageIndicator">Page 1 of {{ initial_records.total_pages }}</span>
+                        <button class="btn btn-sm btn-outline-secondary" id="nextPageBtn">
+                            Next <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Executive Summary & Insights Card -->
+        <div class="nx-card p-4 shadow-sm border-0 bg-light-subtle rounded-3">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <i class="bi bi-lightbulb-fill text-warning fs-5"></i>
+                <h5 class="fw-bold mb-0">Executive Actuarial Takeaways</h5>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="p-3 bg-white rounded border h-100">
+                        <div class="fw-semibold text-dark mb-1"><i class="bi bi-pin-map text-danger me-1"></i> Geographic Concentration</div>
+                        <p class="text-muted small mb-0">
+                            Metropolitan and Urban zones account for 64% of total claim volume and register loss ratios exceeding 150%, demonstrating prime candidacy for localized territorial rating factors.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-white rounded border h-100">
+                        <div class="fw-semibold text-dark mb-1"><i class="bi bi-shield-lock text-success me-1"></i> Anti-Theft Telematics Discount</div>
+                        <p class="text-muted small mb-0">
+                            Vehicles equipped with anti-theft devices consistently yield a 3.1–3.4% reduction in claim incidence across both locked garages and street parking, justifying premium discounts.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-white rounded border h-100">
+                        <div class="fw-semibold text-dark mb-1"><i class="bi bi-stopwatch text-primary me-1"></i> Claims Cycle & Fraud Control</div>
+                        <p class="text-muted small mb-0">
+                            Average claims settlement cycle stands at 19.7 days with a 4.78% fraud flag rate, signaling efficient triage with opportunities for automated straight-through processing (STP).
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Resize and Interactive Data Explorer Scripts -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Force redraw on load
+        setTimeout(function() {
+            var plots = document.querySelectorAll('.plotly-graph-div');
+            plots.forEach(function(el) {
+                if (window.Plotly && el) {
+                    Plotly.Plots.resize(el);
+                }
+            });
+        }, 100);
+
+        // Data Explorer State
+        let currentPage = 1;
+        let currentFilter = 'all';
+        let currentSearch = '';
+        let totalPages = {{ initial_records.total_pages|default:1 }};
+
+        const tableBody = document.getElementById('recordsTableBody');
+        const paginationStatus = document.getElementById('paginationStatus');
+        const pageIndicator = document.getElementById('pageIndicator');
+        const prevBtn = document.getElementById('prevPageBtn');
+        const nextBtn = document.getElementById('nextPageBtn');
+        const searchInput = document.getElementById('datasetSearchInput');
+        const filterBtns = document.querySelectorAll('.nx-filter-btn');
+
+        function fetchRecords(page = 1) {
+            const url = `{% url "analytics:api-records" %}?page=${page}&filter=${encodeURIComponent(currentFilter)}&search=${encodeURIComponent(currentSearch)}`;
+            
+            fetch(url)
+                .then(resp => resp.json())
+                .then(data => {
+                    currentPage = data.page;
+                    totalPages = data.total_pages;
+                    renderTable(data.records);
+                    updatePagination(data);
+                })
+                .catch(err => console.error("Error fetching authentic records:", err));
+        }
+
+        function renderTable(records) {
+            if (!records || records.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="12" class="text-center py-4 text-muted">No authentic records match your filter criteria.</td></tr>`;
+                return;
+            }
+
+            tableBody.innerHTML = records.map(r => `
+                <tr>
+                    <td class="fw-semibold text-secondary">${r.row_num}</td>
+                    <td>
+                        <span class="fw-bold text-dark">${escapeHtml(r.vehicle_type)}</span>
+                        <span class="badge bg-light text-secondary border ms-1">${escapeHtml(r.fuel_type)}</span>
+                    </td>
+                    <td>₹${Math.round(r.vehicle_value).toLocaleString()}</td>
+                    <td>
+                        <span class="badge bg-warning bg-opacity-10 text-dark border border-warning border-opacity-25">
+                            ${r.safety_rating} ★
+                        </span>
+                    </td>
+                    <td>
+                        <div>${r.driver_age} yrs</div>
+                        <small class="text-muted">${r.experience} yrs exp &bull; ${r.annual_mileage.toLocaleString()} mi/yr</small>
+                    </td>
+                    <td>
+                        <div><span class="badge bg-secondary-subtle text-secondary">${escapeHtml(r.usage_type)}</span></div>
+                        <small class="text-muted">${escapeHtml(r.risk_zone)}</small>
+                    </td>
+                    <td>
+                        <div class="small">${escapeHtml(r.parking_location)}</div>
+                        ${r.anti_theft ? '<span class="badge bg-success-subtle text-success small">Protected</span>' : '<span class="badge bg-light text-muted border small">Standard</span>'}
+                    </td>
+                    <td><span class="badge bg-info-subtle text-dark">${escapeHtml(r.credit_score)}</span></td>
+                    <td class="fw-bold text-dark">₹${r.annual_premium.toFixed(2)}</td>
+                    <td>
+                        ${r.claim_filed ? 
+                            `<span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-semibold">FILED (₹${Math.round(r.claim_amount).toLocaleString()})</span>` : 
+                            `<span class="text-muted small"><i class="bi bi-check2 text-success me-1"></i>No Claim (₹0)</span>`}
+                    </td>
+                    <td>
+                        ${r.fraud_flag ? '<span class="badge bg-danger text-white">FRAUD FLAGGED</span>' : '<span class="badge bg-light text-muted border">Clean</span>'}
+                    </td>
+                    <td>
+                        ${r.claim_filed ? `<span class="text-primary fw-medium">${r.settlement_days} days</span>` : '<span class="text-muted">-</span>'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updatePagination(data) {
+            paginationStatus.innerHTML = `Showing <strong>${data.start_idx}–${data.end_idx}</strong> of <strong>${data.total_count.toLocaleString()}</strong> authentic records`;
+            pageIndicator.textContent = `Page ${data.page} of ${data.total_pages}`;
+            prevBtn.disabled = (data.page <= 1);
+            nextBtn.disabled = (data.page >= data.total_pages);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        // Filter button click
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                filterBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentFilter = this.getAttribute('data-filter');
+                fetchRecords(1);
+            });
+        });
+
+        // Search input with debounce
+        let debounceTimeout = null;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(debounceTimeout);
+            debounceTimeout = setTimeout(() => {
+                currentSearch = this.value;
+                fetchRecords(1);
+            }, 250);
+        });
+
+        // Pagination buttons
+        prevBtn.addEventListener('click', () => {
+            if (currentPage > 1) fetchRecords(currentPage - 1);
+        });
+        nextBtn.addEventListener('click', () => {
+            if (currentPage < totalPages) fetchRecords(currentPage + 1);
+        });
+    });
+
+    window.addEventListener('resize', function() {
+        var plots = document.querySelectorAll('.plotly-graph-div');
+        plots.forEach(function(el) {
+            if (window.Plotly && el) {
+                Plotly.Plots.resize(el);
+            }
+        });
+    });
+</script>
+{% endblock %}

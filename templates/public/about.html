@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}About Nexisure | Responsible AI-Driven Vehicle Insurance Platform{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-white">
+    <div class="container py-4">
+        <div class="row align-items-center g-5 mb-5">
+            <div class="col-lg-6">
+                <span class="badge bg-primary bg-opacity-10 text-primary fw-bold text-uppercase px-3 py-2 rounded-pill">Platform Mission</span>
+                <h1 class="h1 fw-bold mt-3 mb-4">Bridging Reliable Insurance Operations with Responsible AI</h1>
+                <p class="lead text-secondary">
+                    Nexisure Vehicle Insurance is an educational capstone platform engineered to demonstrate how modern machine learning, retrieval-augmented generation (RAG), and strict transactional guardrails can enhance insurance management without replacing human oversight.
+                </p>
+                <p class="text-secondary">
+                    Originally conceptualized from the core business workflows of the <em>Star Protect Vehicle</em> mini-project, Nexisure elevates vehicle underwriting, policy lifecycle servicing, and claims resolution into a cohesive, secure Python/Django architecture powered by Supabase PostgreSQL.
+                </p>
+            </div>
+            <div class="col-lg-6">
+                <div class="p-4 rounded-4 bg-light border border-slate-200">
+                    <h4 class="h5 fw-bold mb-3 text-primary"><i class="bi bi-award me-2"></i>Responsible Principles</h4>
+                    <ul class="list-unstyled d-flex flex-column gap-3 small text-secondary mb-0">
+                        <li class="d-flex align-items-start gap-2">
+                            <i class="bi bi-shield-lock-fill text-success fs-5"></i>
+                            <div><strong>Human-in-the-Loop Decisions:</strong> No claim is ever automatically approved or rejected by an algorithm or LLM.</div>
+                        </li>
+                        <li class="d-flex align-items-start gap-2">
+                            <i class="bi bi-shield-check text-success fs-5"></i>
+                            <div><strong>Evidence Grounding:</strong> AI answers are strictly anchored to verified knowledge documents with explicit citations.</div>
+                        </li>
+                        <li class="d-flex align-items-start gap-2">
+                            <i class="bi bi-eye text-success fs-5"></i>
+                            <div><strong>Transparent Estimations:</strong> Predictive risk scores and claim severity values are labeled as probabilistic estimates rather than binding verdicts.</div>
+                        </li>
+                        <li class="d-flex align-items-start gap-2">
+                            <i class="bi bi-lock-fill text-success fs-5"></i>
+                            <div><strong>Strict Authorization:</strong> Supabase Row Level Security ensures cross-customer record leakage is impossible.</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

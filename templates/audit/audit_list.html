@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block title %}Audit Trail & Compliance | Nexisure Operations{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-white">
+    <div class="container py-2">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <span class="nx-brand-badge mb-1 d-inline-block">Compliance & Governance</span>
+                <h1 class="h3 fw-bold mb-1">System Audit Trail</h1>
+                <p class="text-secondary small mb-0">Immutable record of state-altering underwriting, claims, and administrative actions</p>
+            </div>
+            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2">
+                <i class="bi bi-shield-lock-fill me-1"></i> Non-Repudiation Enabled
+            </span>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="nx-card shadow-sm p-3 mb-4 bg-light">
+            <form method="get" class="row g-2 align-items-center">
+                <div class="col-md-3">
+                    <select name="action" class="form-select form-select-sm">
+                        <option value="">-- All Actions --</option>
+                        {% for code, label in action_choices %}
+                        <option value="{{ code }}" {% if selected_action == code %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input type="text" name="actor" class="form-control form-control-sm" placeholder="Filter by Actor Email..." value="{{ actor_query }}">
+                </div>
+                <div class="col-md-3">
+                    <input type="text" name="target_entity" class="form-control form-control-sm" placeholder="Target Entity (e.g. Policy, Claim)..." value="{{ entity_query }}">
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-sm btn-primary flex-grow-1">
+                        <i class="bi bi-filter"></i> Apply Filters
+                    </button>
+                    <a href="{% url 'audit:list' %}" class="btn btn-sm btn-outline-secondary">Reset</a>
+                </div>
+            </form>
+        </div>
+
+        <div class="nx-card shadow-sm p-4">
+            {% if logs %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle small mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Timestamp (UTC)</th>
+                            <th>Actor</th>
+                            <th>Role</th>
+                            <th>Action Type</th>
+                            <th>Target Entity</th>
+                            <th>Target ID</th>
+                            <th>Status</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td class="text-muted font-monospace">{{ log.created_at|date:"Y-m-d H:i:s" }}</td>
+                            <td class="fw-semibold">{{ log.actor_email|default:"System Engine" }}</td>
+                            <td>
+                                {% if log.actor_role == 'ADMINISTRATOR' %}
+                                    <span class="badge bg-dark">ADMIN</span>
+                                {% elif log.actor_role == 'UNDERWRITER' %}
+                                    <span class="badge bg-info text-dark">UNDERWRITER</span>
+                                {% elif log.actor_role == 'CLAIMS_HANDLER' %}
+                                    <span class="badge bg-primary">HANDLER</span>
+                                {% elif log.actor_role == 'CUSTOMER' %}
+                                    <span class="badge bg-secondary">CUSTOMER</span>
+                                {% else %}
+                                    <span class="badge bg-light text-dark border">{{ log.actor_role }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">{{ log.get_action_display }}</span>
+                            </td>
+                            <td><span class="fw-semibold">{{ log.target_entity }}</span></td>
+                            <td class="font-monospace small text-truncate" style="max-width: 120px;" title="{{ log.target_id }}">{{ log.target_id }}</td>
+                            <td>
+                                {% if log.is_success %}
+                                    <span class="badge bg-success">Success</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Failed</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'audit:detail' log.pk %}" class="btn btn-sm btn-outline-primary py-0">
+                                    View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if is_paginated %}
+            <nav class="mt-4">
+                <ul class="pagination pagination-sm justify-content-center mb-0">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if selected_action %}&action={{ selected_action }}{% endif %}{% if actor_query %}&actor={{ actor_query }}{% endif %}{% if entity_query %}&target_entity={{ entity_query }}{% endif %}">Previous</a>
+                    </li>
+                    {% endif %}
+                    <li class="page-item disabled">
+                        <span class="page-link text-muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                    </li>
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if selected_action %}&action={{ selected_action }}{% endif %}{% if actor_query %}&actor={{ actor_query }}{% endif %}{% if entity_query %}&target_entity={{ entity_query }}{% endif %}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            {% else %}
+            <div class="p-5 text-center text-secondary">
+                <i class="bi bi-journal-x display-4 text-muted mb-2"></i>
+                <h4 class="h5 fw-bold text-dark mt-2">No Audit Records Found</h4>
+                <p class="small text-muted mb-0">No matching audit events match your filter criteria.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+
+{% block title %}Semantic Policy QA & RAG Search | Nexisure{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-light border-bottom">
+    <div class="container text-center py-3" style="max-width: 800px;">
+        <span class="nx-brand-badge mb-2 d-inline-block">AI Decision-Support</span>
+        <h1 class="h2 fw-bold text-dark mb-3">Semantic Policy QA & Retrieval</h1>
+        <p class="text-secondary mb-4">
+            Ask natural language questions regarding coverage rules, deductibles, zero depreciation riders,
+            exclusions, or claims procedures grounded in official Nexisure policy wordings.
+        </p>
+
+        <form method="get" action="{% url 'rag:search' %}" class="d-flex gap-2 shadow-sm rounded-3 p-2 bg-white border">
+            <input type="text" name="q" value="{{ query }}" class="form-control border-0 shadow-none px-3"
+                   placeholder="e.g. What is the deductible on Comprehensive insurance? or Is roadside assistance included?" required>
+            <button type="submit" class="nx-btn-primary px-4 py-2 text-nowrap">
+                <i class="bi bi-search me-1"></i> Retrieve Answer
+            </button>
+        </form>
+
+        <div class="d-flex flex-wrap justify-content-center gap-2 mt-3 small">
+            <span class="text-muted">Suggested queries:</span>
+            <a href="?q=What+is+the+deductible+for+Comprehensive+plans%3F" class="badge bg-white text-secondary border text-decoration-none py-1 px-2">Deductibles</a>
+            <a href="?q=What+are+the+eligibility+rules+for+Zero+Depreciation%3F" class="badge bg-white text-secondary border text-decoration-none py-1 px-2">Zero Dep Rules</a>
+            <a href="?q=Is+driving+under+the+influence+covered%3F" class="badge bg-white text-secondary border text-decoration-none py-1 px-2">DUI Exclusion</a>
+            <a href="?q=What+documents+are+needed+for+a+theft+claim%3F" class="badge bg-white text-secondary border text-decoration-none py-1 px-2">Theft Claim Documents</a>
+        </div>
+    </div>
+</section>
+
+<section class="py-5 bg-white">
+    <div class="container py-2" style="max-width: 900px;">
+        {% if query and result %}
+            {% if result.is_grounded %}
+            <div class="nx-card shadow-sm p-4 mb-4 border border-primary border-opacity-25 bg-light bg-opacity-25">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">
+                        <i class="bi bi-shield-check me-1"></i> Grounded Policy Guidance
+                    </span>
+                    <span class="badge bg-primary px-3 py-1">
+                        Confidence: {{ result.confidence_score }}%
+                    </span>
+                </div>
+
+                <div class="text-dark mb-4 lh-lg" style="white-space: pre-line; font-size: 0.95rem;">
+                    {{ result.answer }}
+                </div>
+
+                <div class="border-top pt-3">
+                    <div class="fw-semibold text-secondary small text-uppercase mb-2">Verified Contractual Sources:</div>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for src in result.sources %}
+                        <span class="badge bg-white text-dark border px-2 py-1 small">
+                            <i class="bi bi-file-earmark-text text-primary me-1"></i> {{ src }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Retrieved Context Chunks -->
+            <h5 class="fw-bold text-dark mb-3 mt-5">Retrieved Knowledge Chunks (Cosine Distance Ranked)</h5>
+            <div class="row g-3">
+                {% for chunk in result.chunks %}
+                <div class="col-12">
+                    <div class="nx-card p-3 border shadow-sm">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold text-primary small">{{ chunk.document_title }} &bull; Chunk #{{ chunk.chunk_index }}</span>
+                            <span class="badge bg-secondary small">Similarity: {{ chunk.similarity_score }}</span>
+                        </div>
+                        <div class="text-secondary small" style="white-space: pre-line;">
+                            {{ chunk.content }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% else %}
+            <!-- Out of Scope or Safety Fallback -->
+            <div class="nx-card shadow-sm p-4 border border-warning border-opacity-50 text-center py-5">
+                <i class="bi bi-exclamation-triangle text-warning display-4 mb-3 d-block"></i>
+                <h4 class="h5 fw-bold text-dark mb-2">No Matching Policy Clauses Found</h4>
+                <p class="text-secondary small mb-4" style="max-width: 600px; margin: 0 auto;">
+                    {{ result.answer }}
+                </p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="{% url 'rag:list' %}" class="btn btn-sm btn-outline-secondary">Browse Knowledge Documents</a>
+                    <a href="{% url 'contact' %}" class="nx-btn-primary py-2 small">Contact Underwriting Support</a>
+                </div>
+            </div>
+            {% endif %}
+
+        {% elif query %}
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-search display-5 mb-2 d-block"></i>
+                <p>No results found for "{{ query }}".</p>
+            </div>
+        {% else %}
+            <!-- Initial Empty State -->
+            <div class="row g-4 text-center py-4">
+                <div class="col-md-4">
+                    <div class="p-3">
+                        <i class="bi bi-shield-shaded display-6 text-primary mb-3 d-block"></i>
+                        <h6 class="fw-bold">Grounded Accuracy</h6>
+                        <p class="text-secondary small">Answers are derived strictly from approved contractual policy wordings with no unverified hallucination.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3">
+                        <i class="bi bi-quote display-6 text-success mb-3 d-block"></i>
+                        <h6 class="fw-bold">Source Attribution</h6>
+                        <p class="text-secondary small">Every synthesized response links directly to the specific document and clause section for human verification.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3">
+                        <i class="bi bi-person-lock display-6 text-warning mb-3 d-block"></i>
+                        <h6 class="fw-bold">Responsible AI</h6>
+                        <p class="text-secondary small">Automatic safety guardrails deflect out-of-scope queries and enforce human handler adjudication authority.</p>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

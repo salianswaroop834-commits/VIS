@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Compare Coverage Plans | Nexisure Vehicle Insurance{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-light">
+    <div class="container py-2">
+        <div class="text-center mb-5">
+            <span class="nx-brand-badge mb-2 d-inline-block">Insurance Product Catalog</span>
+            <h1 class="h2 fw-bold">Vehicle Insurance Coverage Plans</h1>
+            <p class="text-secondary max-w-700 mx-auto">
+                Explore transparent, actuarially verified motor insurance plans. All rates, deductibles, and optional riders are clearly itemized in Indian Rupees (₹).
+            </p>
+        </div>
+
+        <div class="row g-4 justify-content-center">
+            {% for plan in plans %}
+                <div class="col-lg-4 col-md-6">
+                    <div class="card h-100 shadow-sm border-0 {% if plan.plan_code == 'COMPREHENSIVE' %}border-top border-primary border-4 shadow{% endif %}">
+                        <div class="card-body p-4 d-flex flex-column">
+                            {% if plan.plan_code == 'COMPREHENSIVE' %}
+                                <div class="badge bg-primary-subtle text-primary align-self-start mb-2 px-3 py-1.5 rounded-pill fw-semibold">
+                                    Most Popular Choice
+                                </div>
+                            {% elif plan.plan_code == 'ZERO_DEP_PREMIUM' %}
+                                <div class="badge bg-success-subtle text-success align-self-start mb-2 px-3 py-1.5 rounded-pill fw-semibold">
+                                    Maximum Protection
+                                </div>
+                            {% else %}
+                                <div class="badge bg-secondary-subtle text-secondary align-self-start mb-2 px-3 py-1.5 rounded-pill fw-semibold">
+                                    Statutory Baseline
+                                </div>
+                            {% endif %}
+
+                            <h3 class="h4 fw-bold mb-1">{{ plan.name }}</h3>
+                            <p class="text-muted small mb-3">{{ plan.tagline|default:plan.description|truncatewords:15 }}</p>
+
+                            <div class="p-3 bg-light rounded-3 mb-4">
+                                <div class="d-flex justify-content-between align-items-baseline mb-1">
+                                    <span class="small text-secondary">Annual Base Rate:</span>
+                                    <span class="h5 fw-bold text-primary mb-0 font-monospace">{{ plan.base_rate_percentage }}% IDV</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-baseline">
+                                    <span class="small text-secondary">Compulsory Deductible:</span>
+                                    <span class="fw-semibold text-dark font-monospace">₹{{ plan.standard_deductible|floatformat:0 }}</span>
+                                </div>
+                            </div>
+
+                            <h6 class="fw-bold small text-uppercase text-secondary tracking-wide mb-3">Included Benefits</h6>
+                            <ul class="list-unstyled small d-flex flex-column gap-2.5 mb-4 flex-grow-1">
+                                {% for feat in plan.features.all %}
+                                    <li class="d-flex align-items-start gap-2">
+                                        {% if feat.is_standard %}
+                                            <i class="bi bi-check-circle-fill text-success mt-0.5"></i>
+                                            <div>
+                                                <span class="fw-medium text-dark">{{ feat.title }}</span>
+                                                {% if feat.description %}
+                                                    <p class="text-muted small mb-0" style="font-size: 0.8rem;">{{ feat.description }}</p>
+                                                {% endif %}
+                                            </div>
+                                        {% else %}
+                                            <i class="bi bi-plus-circle-dotted text-primary mt-0.5"></i>
+                                            <div>
+                                                <span class="fw-medium text-primary">{{ feat.title }}</span>
+                                                <span class="badge bg-light text-primary border ms-1">+₹{{ feat.add_on_premium|floatformat:0 }}/yr</span>
+                                                {% if feat.description %}
+                                                    <p class="text-muted small mb-0" style="font-size: 0.8rem;">{{ feat.description }}</p>
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+                                    </li>
+                                {% empty %}
+                                    <li class="text-muted small">Standard statutory inclusions apply.</li>
+                                {% endfor %}
+                            </ul>
+
+                            <a href="{% url 'quotations:create' %}?plan={{ plan.plan_code }}" class="btn {% if plan.plan_code == 'COMPREHENSIVE' %}btn-primary{% else %}btn-outline-primary{% endif %} w-100 py-2.5 fw-semibold mt-auto">
+                                <i class="bi bi-calculator me-1"></i> Get Quote for {{ plan.name }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-12 text-center py-5">
+                    <p class="text-muted">No active coverage plans currently available.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

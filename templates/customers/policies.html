@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %}My Policies | Nexisure Vehicle Insurance{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-white">
+    <div class="container py-2">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 fw-bold mb-1">My Policies</h1>
+                <p class="text-secondary small mb-0">View your active, expired, and renewed vehicle insurance contracts</p>
+            </div>
+            <a href="{% url 'quotations:estimator' %}" class="nx-btn-primary py-2 small">
+                <i class="bi bi-plus-lg"></i> Purchase New Policy
+            </a>
+        </div>
+
+        {% if policies %}
+            <div class="nx-card shadow-sm p-4">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle small mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Policy Number</th>
+                                <th>Vehicle Details</th>
+                                <th>Coverage Plan</th>
+                                <th>Term</th>
+                                <th>Locked Premium</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in policies %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'policies:detail' p.id %}" class="fw-bold font-monospace text-primary text-decoration-none">
+                                            {{ p.policy_number }}
+                                        </a>
+                                        {% if p.previous_policy %}
+                                            <div><span class="badge bg-light text-muted border" style="font-size: 0.7rem;">Renewed</span></div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div><strong>{{ p.vehicle.make }} {{ p.vehicle.model }}</strong></div>
+                                        <span class="text-muted small font-monospace">Reg: {{ p.vehicle.registration_number }}</span>
+                                    </td>
+                                    <td>{{ p.coverage_plan.name }}</td>
+                                    <td>{{ p.duration_years }} Year ({{ p.start_date|date:"M Y" }} - {{ p.end_date|date:"M Y" }})</td>
+                                    <td class="fw-bold font-monospace text-dark">₹{{ p.premium_amount|floatformat:2 }}</td>
+                                    <td>
+                                        <span class="badge {% if p.status == 'ACTIVE' %}bg-success{% elif p.status == 'RENEWED' %}bg-info text-dark{% elif p.status == 'EXPIRED' %}bg-warning text-dark{% elif p.status == 'CANCELLED' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                            {{ p.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-1">
+                                            <a href="{% url 'policies:detail' p.id %}" class="btn btn-sm btn-outline-primary py-0">
+                                                Details &rarr;
+                                            </a>
+                                            <a href="{% url 'policies:certificate' p.id %}" target="_blank" class="btn btn-sm btn-outline-secondary py-0" title="Download Policy Certificate PDF">
+                                                <i class="bi bi-file-earmark-pdf text-danger"></i> PDF
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% else %}
+            <div class="nx-card shadow-sm p-5 text-center">
+                <i class="bi bi-file-earmark-text display-4 text-primary mb-3"></i>
+                <h4 class="h5 fw-bold">No Policies Issued Yet</h4>
+                <p class="text-secondary small max-w-500 mx-auto mb-4">
+                    Protect your vehicles with transparent coverage. Compare plans and generate your instant quotation in seconds.
+                </p>
+                <a href="{% url 'quotations:estimator' %}" class="nx-btn-primary d-inline-flex">
+                    <i class="bi bi-shield-plus"></i> Generate a Quote
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

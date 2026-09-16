@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block title %}403 - Access Restricted | Nexisure Vehicle Insurance{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-white text-center flex-grow-1 d-flex align-items-center">
+    <div class="container py-5" style="max-width: 650px;">
+        <div class="nx-icon-box nx-icon-amber mx-auto mb-3" style="width: 72px; height: 72px; font-size: 2.2rem;">
+            <i class="bi bi-lock-fill"></i>
+        </div>
+        <div class="display-1 fw-bolder text-warning mb-2 font-monospace">403</div>
+        <h1 class="h3 fw-bold mb-3 text-dark">Access Permission Restricted</h1>
+        <p class="text-secondary mb-4 lh-base">
+            You do not have the required operational role or credentials to access this insurance workspace. Please verify your assigned permissions or sign in with an authorized account.
+        </p>
+        <div class="d-flex justify-content-center gap-3">
+            <a href="{% url 'home' %}" class="nx-btn-primary py-2 px-4">
+                <i class="bi bi-house-door-fill"></i> Return Home
+            </a>
+            <a href="{% url 'accounts:login' %}" class="nx-btn-outline py-2 px-4">
+                <i class="bi bi-box-arrow-in-right"></i> Sign In to Authorized Portal
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}

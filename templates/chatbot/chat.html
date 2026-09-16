@@ -1,0 +1,397 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Insurance Assistant | Nexisure{% endblock %}
+
+{% block extra_css %}
+<style>
+    .nx-chat-container {
+        border-radius: var(--nx-radius-xl);
+        overflow: hidden;
+        box-shadow: var(--nx-shadow-lg);
+        background: #ffffff;
+        border: 1px solid var(--nx-border);
+        display: flex;
+        flex-direction: column;
+        height: 720px;
+    }
+    .nx-suggestions-bar {
+        flex-shrink: 0 !important;
+        min-height: 56px !important;
+        height: 56px !important;
+        background-color: #f8fafc !important;
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+        scrollbar-width: none !important; /* Firefox */
+        -ms-overflow-style: none !important; /* Edge */
+        border-top: 1px solid #e2e8f0 !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+    }
+    .nx-suggestions-bar::-webkit-scrollbar {
+        display: none !important; /* Chrome / Edge / Safari */
+        width: 0 !important;
+        height: 0 !important;
+    }
+    .nx-prompt-chip {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 7px !important;
+        padding: 8px 16px !important;
+        background: #ffffff !important;
+        border: 1.5px solid #cbd5e1 !important;
+        border-radius: 9999px !important;
+        font-size: 0.82rem !important;
+        font-weight: 550 !important;
+        line-height: 1.2 !important;
+        height: 36px !important;
+        color: #334155 !important;
+        white-space: nowrap !important;
+        cursor: pointer !important;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06) !important;
+        flex-shrink: 0 !important;
+        text-decoration: none !important;
+        box-sizing: border-box !important;
+    }
+    .nx-prompt-chip:hover {
+        color: #0284c7 !important;
+        background-color: #f0f9ff !important;
+        border-color: #38bdf8 !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(2, 132, 199, 0.15) !important;
+    }
+    .nx-prompt-chip:active {
+        transform: translateY(0) !important;
+    }
+    .nx-chat-input-container {
+        flex-shrink: 0 !important;
+        background: #ffffff !important;
+    }
+    .nx-chat-input-wrapper {
+        background: #ffffff !important;
+        border: 1.5px solid #cbd5e1 !important;
+        border-radius: 12px !important;
+        transition: all 0.2s ease !important;
+        min-height: 48px !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+    }
+    .nx-chat-input-wrapper:focus-within {
+        border-color: #0284c7 !important;
+        box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-3 bg-light border-bottom">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <div class="d-inline-flex align-items-center gap-2 mb-1">
+                    <span class="badge bg-primary px-2.5 py-1">Conversational AI</span>
+                    <span class="text-secondary small fw-medium">Evidence-Grounded RAG &bull; Transactional Tool Calling</span>
+                </div>
+                <h1 class="h3 fw-bold mb-0 text-dark">Nexisure Insurance Assistant</h1>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 small">
+                    <i class="bi bi-shield-check me-1"></i> Two-Step Confirmation Enforced
+                </span>
+                <a href="{% url 'rag:search' %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-search me-1"></i> Knowledge Base
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-4 bg-white">
+    <div class="container py-1" style="max-width: 1000px;">
+        <div class="nx-chat-container d-flex flex-column" style="height: 680px;">
+            <!-- Chat Window Header -->
+            <div class="px-4 py-3 bg-light border-bottom d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="nx-icon-box nx-icon-blue mb-0" style="width: 40px; height: 40px; font-size: 1.15rem;">
+                        <i class="bi bi-robot"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold text-dark small d-flex align-items-center gap-2">
+                            <span>Nexisure Responsible Agent</span>
+                            <span class="badge bg-success rounded-pill px-2" style="font-size: 0.65rem;">Active</span>
+                        </div>
+                        <div class="text-muted small" style="font-size: 0.76rem;">Grounded against official vehicle policy contracts via pgvector</div>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                    {% if user.is_authenticated %}
+                    <span class="badge bg-white text-dark border px-2.5 py-1.5 small">
+                        <i class="bi bi-person-check-fill text-success me-1"></i> {{ user.email|truncatechars:18 }}
+                    </span>
+                    {% else %}
+                    <span class="badge bg-white text-secondary border px-2.5 py-1.5 small">
+                        <i class="bi bi-person-slash me-1"></i> Guest Session
+                    </span>
+                    {% endif %}
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="location.reload();">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> New Session
+                    </button>
+                </div>
+            </div>
+
+            <!-- Messages Stream Container -->
+            <div class="p-4 flex-grow-1 overflow-auto d-flex flex-column gap-3" id="chatMessageContainer" style="background-color: #fafbfd;">
+                <!-- Initial Welcome Message from Assistant -->
+                <div class="d-flex gap-3 align-items-start">
+                    <div class="nx-icon-box nx-icon-blue mb-0 flex-shrink-0" style="width: 36px; height: 36px; font-size: 1rem;">
+                        <i class="bi bi-stars"></i>
+                    </div>
+                    <div class="nx-chat-bubble nx-chat-bubble-bot shadow-xs">
+                        <div class="fw-bold text-primary small mb-1">Nexisure Decision Support</div>
+                        <p class="mb-2">Hello! I am your AI insurance assistant. I can answer policy wording inquiries, retrieve coverage clauses, verify active policies, or guide you through filing a claim with strict two-step confirmation.</p>
+                        
+                        <div class="p-2.5 rounded-3 bg-white border border-info border-opacity-25 text-secondary small" style="font-size: 0.78rem;">
+                            <i class="bi bi-shield-exclamation text-info me-1"></i>
+                            <em><strong>Responsible AI Disclaimer:</strong> All responses are decision-support signals. Claim authorizations and financial settlements remain exclusively under the jurisdiction of qualified human claims handlers.</em>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Suggestions Pills -->
+            <div class="nx-suggestions-bar px-3 py-2 d-flex gap-2 align-items-center">
+                <span class="text-secondary small fw-semibold flex-shrink-0 d-inline-flex align-items-center" style="font-size: 0.78rem;">
+                    <i class="bi bi-lightning-charge-fill text-warning me-1"></i>Suggested:
+                </span>
+                <button type="button" class="nx-prompt-chip quick-prompt" data-prompt="What is covered under Zero Depreciation?">
+                    <i class="bi bi-shield-check text-primary"></i>
+                    <span>What is covered under Zero Depreciation?</span>
+                </button>
+                <button type="button" class="nx-prompt-chip quick-prompt" data-prompt="Show my active policies">
+                    <i class="bi bi-file-earmark-text text-success"></i>
+                    <span>Show my active policies</span>
+                </button>
+                <button type="button" class="nx-prompt-chip quick-prompt" data-prompt="Register an accident claim">
+                    <i class="bi bi-exclamation-octagon text-danger"></i>
+                    <span>Register an accident claim</span>
+                </button>
+                <button type="button" class="nx-prompt-chip quick-prompt" data-prompt="What are the common coverage exclusions?">
+                    <i class="bi bi-slash-circle text-secondary"></i>
+                    <span>What are common coverage exclusions?</span>
+                </button>
+                <button type="button" class="nx-prompt-chip quick-prompt" data-prompt="How does the ₹1,000 deductible work?">
+                    <i class="bi bi-calculator text-info"></i>
+                    <span>How does the ₹1,000 deductible work?</span>
+                </button>
+            </div>
+
+            <!-- Input Form Bar -->
+            <div class="p-3 nx-chat-input-container border-top">
+                <form id="chatInputForm" class="d-flex gap-2 align-items-center">
+                    {% csrf_token %}
+                    <div class="nx-chat-input-wrapper flex-grow-1 d-flex align-items-center">
+                        <span class="text-muted ps-3 pe-2"><i class="bi bi-chat-dots-fill text-primary"></i></span>
+                        <input type="text" class="form-control border-0 shadow-none py-2.5 ps-1 pe-3 bg-transparent" id="chatInput"
+                               placeholder="Type a policy inquiry or command (e.g. 'What does Comprehensive cover?')..." autocomplete="off" required>
+                    </div>
+                    <button type="submit" id="sendBtn" class="nx-btn-primary px-4 py-2.5 flex-shrink-0">
+                        <span>Send</span>
+                        <i class="bi bi-send-fill ms-1"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatContainer = document.getElementById('chatMessageContainer');
+    const inputForm = document.getElementById('chatInputForm');
+    const chatInput = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendBtn');
+    let sessionKey = null;
+
+    function scrollToBottom() {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function appendUserMessage(text) {
+        const wrap = document.createElement('div');
+        wrap.className = 'd-flex justify-content-end mb-2';
+        wrap.innerHTML = `
+            <div class="nx-chat-bubble nx-chat-bubble-user shadow-xs">
+                ${escapeHtml(text)}
+            </div>
+        `;
+        chatContainer.appendChild(wrap);
+        scrollToBottom();
+    }
+
+    function appendAssistantMessage(text, sources, pendingTx) {
+        const wrap = document.createElement('div');
+        wrap.className = 'd-flex gap-3 align-items-start mb-2';
+
+        let sourcesHtml = '';
+        if (sources && sources.length > 0) {
+            sourcesHtml = `
+                <div class="border-top pt-2 mt-2">
+                    <small class="fw-semibold text-secondary text-uppercase" style="font-size: 0.68rem;">Verified Sources:</small>
+                    <div class="d-flex flex-wrap gap-1 mt-1">
+                        ${sources.map(s => `<span class="badge bg-white text-dark border px-2 py-1" style="font-size: 0.7rem;"><i class="bi bi-file-earmark-text text-primary me-1"></i>${escapeHtml(s)}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        let actionCardHtml = '';
+        if (pendingTx) {
+            actionCardHtml = `
+                <div class="nx-staged-action-card">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong class="text-primary small"><i class="bi bi-exclamation-octagon-fill me-1"></i> Action Staged for Review</strong>
+                        <span class="badge bg-warning text-dark small">Confirmation Required</span>
+                    </div>
+                    <div class="small text-secondary mb-3">
+                        <div><strong>Policy:</strong> ${escapeHtml(pendingTx.policy_number || 'N/A')} (${escapeHtml(pendingTx.vehicle_plate || 'N/A')})</div>
+                        <div><strong>Estimated Loss:</strong> ₹${(pendingTx.estimated_amount || 0).toLocaleString()}</div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-success px-3 stage-confirm-btn">
+                            <i class="bi bi-check-lg me-1"></i> Confirm & Submit Claim
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger px-3 stage-cancel-btn">
+                            <i class="bi bi-x-lg me-1"></i> Cancel
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        wrap.innerHTML = `
+            <div class="nx-icon-box nx-icon-blue mb-0 flex-shrink-0" style="width: 36px; height: 36px; font-size: 1rem;">
+                <i class="bi bi-stars"></i>
+            </div>
+            <div class="nx-chat-bubble nx-chat-bubble-bot shadow-xs">
+                <div class="fw-bold text-primary small mb-1">Nexisure Assistant</div>
+                <div class="text-dark" style="white-space: pre-line;">${formatMarkdown(text)}</div>
+                ${actionCardHtml}
+                ${sourcesHtml}
+            </div>
+        `;
+        chatContainer.appendChild(wrap);
+
+        // Bind interactive confirmation buttons
+        wrap.querySelectorAll('.stage-confirm-btn').forEach(btn => {
+            btn.addEventListener('click', () => sendMessage('CONFIRM'));
+        });
+        wrap.querySelectorAll('.stage-cancel-btn').forEach(btn => {
+            btn.addEventListener('click', () => sendMessage('CANCEL'));
+        });
+
+        scrollToBottom();
+    }
+
+    function appendTypingIndicator() {
+        const wrap = document.createElement('div');
+        wrap.id = 'typingIndicator';
+        wrap.className = 'd-flex gap-3 align-items-center mb-2';
+        wrap.innerHTML = `
+            <div class="nx-icon-box nx-icon-blue mb-0 flex-shrink-0" style="width: 36px; height: 36px; font-size: 1rem;">
+                <i class="bi bi-robot"></i>
+            </div>
+            <div class="nx-chat-bubble nx-chat-bubble-bot py-2 px-3">
+                <div class="d-flex gap-1 align-items-center">
+                    <span class="nx-typing-dot"></span>
+                    <span class="nx-typing-dot"></span>
+                    <span class="nx-typing-dot"></span>
+                    <small class="text-muted ms-2" style="font-size: 0.72rem;">Analyzing policy clauses...</small>
+                </div>
+            </div>
+        `;
+        chatContainer.appendChild(wrap);
+        scrollToBottom();
+    }
+
+    function removeTypingIndicator() {
+        const el = document.getElementById('typingIndicator');
+        if (el) el.remove();
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    function formatMarkdown(text) {
+        if (!text) return '';
+        // Bold formatting
+        let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        // Bullet list formatting
+        formatted = formatted.replace(/^&bull;\s+(.*)$/gm, '<div class="d-flex align-items-start gap-2 my-1"><i class="bi bi-check2 text-primary"></i><span>$1</span></div>');
+        return formatted;
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function sendMessage(msgText) {
+        const text = (msgText || chatInput.value).trim();
+        if (!text) return;
+
+        appendUserMessage(text);
+        if (!msgText) chatInput.value = '';
+        appendTypingIndicator();
+
+        const csrftoken = getCookie('csrftoken') || document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+
+        fetch('{% url "chatbot:api-message" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                message: text,
+                session_key: sessionKey,
+            }),
+        })
+        .then(resp => resp.json())
+        .then(data => {
+            removeTypingIndicator();
+            if (data.session_key) sessionKey = data.session_key;
+            appendAssistantMessage(data.message || data.error, data.sources || [], data.pending_transaction);
+        })
+        .catch(err => {
+            removeTypingIndicator();
+            appendAssistantMessage("I encountered a connection error. Please try sending your message again.", []);
+        });
+    }
+
+    inputForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        sendMessage();
+    });
+
+    document.querySelectorAll('.quick-prompt').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const promptText = this.getAttribute('data-prompt') || this.querySelector('span')?.textContent.trim() || this.textContent.trim();
+            sendMessage(promptText);
+        });
+    });
+});
+</script>
+{% endblock %}

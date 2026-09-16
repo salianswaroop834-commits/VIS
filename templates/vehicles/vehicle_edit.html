@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit {{ vehicle.make }} {{ vehicle.model }} | Nexisure{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-white">
+    <div class="container py-2 max-w-700">
+        <div class="mb-4">
+            <a href="{% url 'vehicles:detail' vehicle.id %}" class="small text-secondary text-decoration-none">
+                <i class="bi bi-arrow-left"></i> Back to Vehicle Details
+            </a>
+            <h1 class="h3 fw-bold mt-2">Edit Vehicle Asset</h1>
+            <p class="text-secondary small">Update registered vehicle specifications and parameters</p>
+        </div>
+
+        {% if has_active_policy %}
+            <div class="alert alert-warning border-warning-subtle small mb-4">
+                <div class="d-flex align-items-start gap-2">
+                    <i class="bi bi-lock-fill fs-5 text-warning-emphasis"></i>
+                    <div>
+                        <strong class="d-block text-warning-emphasis">Active Policy Financial Lock</strong>
+                        This vehicle is covered under Active Policy <span class="font-monospace fw-bold text-dark">{{ active_policy.policy_number }}</span>.
+                        In accordance with insurance regulatory standards, <strong>License Plate</strong> and <strong>Insured Declared Value (IDV)</strong>
+                        cannot be altered mid-term. You may update technical specifications such as Engine Number, Powertrain, and Usage Profile.
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="nx-card shadow-sm p-4 p-md-5">
+            <form method="post" action="{% url 'vehicles:edit' vehicle.id %}" class="d-flex flex-column gap-3">
+                {% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-secondary small">Vehicle Make</label>
+                        <input type="text" class="form-control" name="make" value="{{ data.make|default:vehicle.make }}" required placeholder="e.g. Toyota" {% if has_active_policy %}readonly{% endif %}>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-secondary small">Model</label>
+                        <input type="text" class="form-control" name="model" value="{{ data.model|default:vehicle.model }}" required placeholder="e.g. RAV4 XLE" {% if has_active_policy %}readonly{% endif %}>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-secondary small">License Plate / Registration</label>
+                        <input type="text" class="form-control font-monospace text-uppercase" name="registration_number" value="{{ data.registration_number|default:vehicle.registration_number }}" required placeholder="DL01AB1234" {% if has_active_policy %}readonly{% endif %}>
+                        {% if has_active_policy %}
+                            <small class="text-muted"><i class="bi bi-lock-fill"></i> Locked by active policy.</small>
+                        {% else %}
+                            <small class="text-muted">Normalized automatically to uppercase alphanumeric.</small>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-secondary small">Manufacture Year</label>
+                        <input type="number" class="form-control" name="manufacture_year" value="{{ data.manufacture_year|default:vehicle.manufacture_year }}" required min="1980" max="2027" {% if has_active_policy %}readonly{% endif %}>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-secondary small">Chassis Number / VIN</label>
+                        <input type="text" class="form-control font-monospace text-uppercase" name="chassis_number" value="{{ data.chassis_number|default:vehicle.chassis_number }}" required placeholder="1HGCV1F32NA012984" {% if has_active_policy %}readonly{% endif %}>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-secondary small">Engine Number (Optional)</label>
+                        <input type="text" class="form-control font-monospace text-uppercase" name="engine_number" value="{{ data.engine_number|default:vehicle.engine_number }}" placeholder="ENG8819234">
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-secondary small">Vehicle Body Type</label>
+                        <select class="form-select" name="vehicle_type" {% if has_active_policy %}disabled{% endif %}>
+                            {% for code, name in vehicle_types %}
+                                <option value="{{ code }}" {% if data.vehicle_type == code or vehicle.vehicle_type == code %}selected{% endif %}>{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if has_active_policy %}
+                            <input type="hidden" name="vehicle_type" value="{{ vehicle.vehicle_type }}">
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-secondary small">Fuel / Powertrain</label>
+                        <select class="form-select" name="fuel_type">
+                            {% for code, name in fuel_types %}
+                                <option value="{{ code }}" {% if data.fuel_type == code or vehicle.fuel_type == code %}selected{% endif %}>{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-secondary small">Usage Profile</label>
+                        <select class="form-select" name="usage_type">
+                            {% for code, name in usage_types %}
+                                <option value="{{ code }}" {% if data.usage_type == code or vehicle.usage_type == code %}selected{% endif %}>{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label fw-semibold text-secondary small">Insured Declared Value (IDV in ₹)</label>
+                    <div class="input-group">
+                        <span class="input-group-text">₹</span>
+                        <input type="number" class="form-control font-monospace" name="vehicle_value" value="{{ data.vehicle_value|default:vehicle.vehicle_value }}" required min="500" step="500" {% if has_active_policy %}readonly{% endif %}>
+                    </div>
+                    {% if has_active_policy %}
+                        <small class="text-muted"><i class="bi bi-lock-fill"></i> Valuation locked by active policy. Financial changes take effect at renewal.</small>
+                    {% else %}
+                        <small class="text-muted">Current assessed market valuation for comprehensive and collision coverage.</small>
+                    {% endif %}
+                </div>
+
+                <div class="d-flex gap-2 justify-content-end mt-3">
+                    <a href="{% url 'vehicles:detail' vehicle.id %}" class="nx-btn-outline py-2">Cancel</a>
+                    <button type="submit" class="nx-btn-primary py-2">
+                        <i class="bi bi-check2-circle"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

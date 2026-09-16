@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Contact Us | Nexisure Vehicle Insurance{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-white">
+    <div class="container py-4 max-w-700">
+        <div class="text-center mb-5">
+            <span class="badge bg-primary bg-opacity-10 text-primary fw-bold text-uppercase px-3 py-2 rounded-pill">Get In Touch</span>
+            <h1 class="h1 fw-bold mt-3 mb-3">Contact Nexisure Support</h1>
+            <p class="text-secondary">
+                Have questions regarding your vehicle coverage or claims workflow? Our team and AI assistant are available 24/7.
+            </p>
+        </div>
+
+        <div class="nx-card p-4 p-md-5">
+            <form method="post" action="{% url 'contact' %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary">Your Name</label>
+                    <input type="text" class="form-control" name="name" required placeholder="Jane Doe">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary">Email Address</label>
+                    <input type="email" class="form-control" name="email" required placeholder="jane@example.com">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary">Inquiry Type</label>
+                    <select class="form-select" name="subject">
+                        <option value="quote">Quotation & Rates Inquiry</option>
+                        <option value="claim">Claim Procedure Inquiry</option>
+                        <option value="service">Policy Servicing / Endorsement</option>
+                        <option value="technical">Platform Technical Feedback</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label fw-semibold text-secondary">Your Message</label>
+                    <textarea class="form-control" name="message" rows="4" required placeholder="How can we assist you today?"></textarea>
+                </div>
+                <button type="button" class="nx-btn-primary w-100 justify-content-center py-2.5" onclick="alert('Message sent! (Simulated contact form demonstration)');">
+                    <i class="bi bi-send-fill"></i> Send Message
+                </button>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}
