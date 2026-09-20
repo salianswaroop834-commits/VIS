@@ -12,7 +12,8 @@ from policies.models import Policy
 from policies.services.policy_service import PolicyService
 from customers.models import CustomerProfile
 from audit.services.audit_service import AuditService
-from core.services import ServiceValidationError
+from core.services import ServiceValidationError, NotificationService
+
 
 
 class PaymentService:
@@ -231,7 +232,26 @@ class PaymentService:
                 }
             )
 
+            if user and getattr(user, 'is_authenticated', False):
+                if is_successful:
+                    NotificationService.notify(
+                        recipient=user,
+                        title="Payment Authorized",
+                        message=f"Payment of ₹{amount:,.2f} authorized successfully. Policy {issued_policy.policy_number if issued_policy else ''} is active. Transaction: {txn_id}.",
+                        notification_type='GENERAL',
+                        action_url=f"/policies/{issued_policy.id}/" if issued_policy else "/customer/policies/",
+                    )
+                else:
+                    NotificationService.notify(
+                        recipient=user,
+                        title="Payment Declined",
+                        message=f"Payment of ₹{amount:,.2f} declined: {response_msg}. Transaction: {txn_id}.",
+                        notification_type='SECURITY_ALERT',
+                        action_url="/quotations/",
+                    )
+
         if not is_successful:
             raise ServiceValidationError(response_msg)
 
         return payment
+

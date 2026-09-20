@@ -133,7 +133,18 @@ class ClaimDetailView(LoginRequiredMixin, DetailView):
             customer = getattr(user, 'customer_profile', None)
             if not customer or claim.customer != customer:
                 raise PermissionDenied("You are not authorized to view this claim.")
-        elif not (user.is_claims_handler or user.is_administrator or user.is_underwriter):
+        elif user.is_staff_member:
+            from staff.models import StaffCustomerAssignment
+            is_assigned = (
+                claim.handler and claim.handler.user == user
+            ) or StaffCustomerAssignment.objects.filter(
+                staff=user,
+                customer=claim.customer,
+                status='ACTIVE'
+            ).exists() or claim.status == ClaimStatus.PENDING
+            if not is_assigned:
+                raise PermissionDenied("Unauthorized: This claim belongs to a customer not assigned to you.")
+        elif not (user.is_administrator or user.is_superuser):
             raise PermissionDenied("Insufficient privileges to view this claim.")
         return claim
 
@@ -290,7 +301,18 @@ class ClaimDocumentDownloadView(LoginRequiredMixin, View):
             customer = getattr(user, 'customer_profile', None)
             if not customer or doc.claim.customer != customer:
                 raise PermissionDenied("Unauthorized: You cannot access documents belonging to another customer's claim.")
-        elif not (user.is_claims_handler or user.is_administrator or user.is_underwriter):
+        elif user.is_staff_member:
+            from staff.models import StaffCustomerAssignment
+            is_assigned = (
+                doc.claim.handler and doc.claim.handler.user == user
+            ) or StaffCustomerAssignment.objects.filter(
+                staff=user,
+                customer=doc.claim.customer,
+                status='ACTIVE'
+            ).exists() or doc.claim.status == ClaimStatus.PENDING
+            if not is_assigned:
+                raise PermissionDenied("Unauthorized: You cannot access documents belonging to an unassigned customer.")
+        elif not (user.is_administrator or user.is_superuser):
             raise PermissionDenied("Insufficient privileges to view this claim document.")
 
         try:

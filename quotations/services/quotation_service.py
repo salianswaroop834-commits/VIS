@@ -10,7 +10,8 @@ from vehicles.models import Vehicle
 from staff.models import StaffProfile
 from audit.models import AuditAction
 from audit.services.audit_service import AuditService
-from core.services import ServiceValidationError
+from core.services import ServiceValidationError, NotificationService
+
 
 
 class QuotationService:
@@ -239,7 +240,17 @@ class QuotationService:
             }
         )
 
+        if customer and customer.user:
+            NotificationService.notify(
+                recipient=customer.user,
+                title="Quotation Generated",
+                message=f"Quotation {draft.quotation_number} ({calc['plan'].name}) has been generated for ₹{draft.calculated_premium:,.2f}. Valid for 30 days.",
+                notification_type='GENERAL',
+                action_url=f"/quotations/{draft.id}/",
+            )
+
         return draft
+
 
     @classmethod
     def accept_quotation(

@@ -67,6 +67,13 @@ class PredictionLog(AuditableModel):
     disclaimer = models.TextField(
         default='ML estimation signal only. Not an automated claim decision.'
     )
+    requested_by = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='requested_predictions',
+    )
 
     class Meta:
         verbose_name = 'Prediction Log'

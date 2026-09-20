@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "RapidAPI Hub - Vehicle RC Information V2": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://mcp.rapidapi.com",
+        "--header",
+        "x-api-host: vehicle-rc-information-v2.p.rapidapi.com",
+        "--header",
+        "x-api-key: 7218ddd9c1mshd6872831f811ffep1891e8jsn90b31e1fc752"
+      ]
+    }
+  }
+}

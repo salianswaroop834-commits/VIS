@@ -1,5 +1,6 @@
 from decimal import Decimal
 from django.db import models
+from django.conf import settings
 from core.models import AuditableModel
 from customers.models import CustomerProfile
 from vehicles.models import Vehicle
@@ -79,12 +80,40 @@ class CoverageFeature(AuditableModel):
         return f"{self.plan.name} - {self.title} ({type_str})"
 
 
+class QuotationDraftQuerySet(models.QuerySet):
+    def _filter_or_exclude(self, negate, args, kwargs):
+        new_kwargs = {}
+        for k, v in kwargs.items():
+            if k == 'underwriter':
+                new_kwargs['assigned_staff'] = v
+            elif k.startswith('underwriter__'):
+                new_kwargs['assigned_staff' + k[11:]] = v
+            else:
+                new_kwargs[k] = v
+        return super()._filter_or_exclude(negate, args, new_kwargs)
+
+    def select_related(self, *fields):
+        new_fields = []
+        for f in fields:
+            if f == 'underwriter':
+                new_fields.append('assigned_staff')
+            elif isinstance(f, str) and f.startswith('underwriter__'):
+                new_fields.append('assigned_staff' + f[11:])
+            else:
+                new_fields.append(f)
+        return super().select_related(*new_fields)
+
+
+class QuotationDraftManager(models.Manager.from_queryset(QuotationDraftQuerySet)):
+    pass
+
+
 class QuotationDraft(AuditableModel):
     """
     Quotation draft entity.
-    Allows prospective or existing customers to compare coverages,
-    calculate simulated premiums, and review options prior to purchase.
+    Maintains computed rates, customer selections, and state transitions.
     """
+    objects = QuotationDraftManager()
     class QuotationStatus(models.TextChoices):
         DRAFT = 'DRAFT', 'Draft'
         ACCEPTED = 'ACCEPTED', 'Accepted by Customer'
@@ -111,14 +140,38 @@ class QuotationDraft(AuditableModel):
         on_delete=models.PROTECT,
         related_name='quotations',
     )
-    underwriter = models.ForeignKey(
+    assigned_staff = models.ForeignKey(
         StaffProfile,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='quotations',
-        help_text='Underwriter who prepared or reviewed this quote',
+        help_text='Staff member who prepared or reviewed this quote',
     )
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reviewed_quotations',
+        help_text='Staff member or admin who reviewed this quote',
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_quotations',
+        help_text='User who initiated this quote',
+    )
+
+    @property
+    def underwriter(self):
+        return self.assigned_staff
+
+    @underwriter.setter
+    def underwriter(self, value):
+        self.assigned_staff = value
     vehicle_value = models.DecimalField(max_digits=12, decimal_places=2, help_text='Insured Declared Value (IDV) in INR')
     duration_years = models.PositiveIntegerField(default=1, choices=[(1, '1 Year'), (2, '2 Years'), (3, '3 Years')])
     base_premium = models.DecimalField(
@@ -159,6 +212,12 @@ class QuotationDraft(AuditableModel):
         ordering = ['-created_at']
 
     def save(self, *args, **kwargs):
+        if 'update_fields' in kwargs and kwargs['update_fields'] is not None:
+            uf = set(kwargs['update_fields'])
+            if 'underwriter' in uf:
+                uf.remove('underwriter')
+                uf.add('assigned_staff')
+                kwargs['update_fields'] = list(uf)
         if self.pk and not self._state.adding:
             orig = QuotationDraft.objects.filter(pk=self.pk).values(
                 'status', 'calculated_premium', 'base_premium', 'deductible_amount', 'vehicle_value'

@@ -1,0 +1,26 @@
+﻿{% extends "base.html" %}
+{% block title %}Cookie Notice | {{ PLATFORM_NAME }}{% endblock %}
+{% block meta_description %}Nexisure Cookie Policy — how we use cookies and similar technologies.{% endblock %}
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center"><div class="col-lg-8">
+    <h1 class="h2 fw-bold mb-4"><i class="bi bi-cookie text-primary me-2"></i>Cookie Notice</h1>
+    <p class="text-muted">Last updated: September 2026</p>
+    <div class="card border-0 shadow-sm p-4 mb-4">
+      <h2 class="h5 fw-bold mb-3">What Are Cookies?</h2>
+      <p>Cookies are small text files placed on your device to help websites function correctly and securely. Nexisure uses cookies strictly for essential platform operations — not for advertising or cross-site tracking.</p>
+    </div>
+    <div class="card border-0 shadow-sm p-4 mb-4">
+      <h2 class="h5 fw-bold mb-3">Cookies We Use</h2>
+      <table class="table table-sm"><thead class="table-light"><tr><th>Cookie</th><th>Purpose</th><th>Duration</th></tr></thead><tbody>
+        <tr><td><code>sessionid</code></td><td>Django session authentication — keeps you logged in securely</td><td>Session</td></tr>
+        <tr><td><code>csrftoken</code></td><td>Cross-Site Request Forgery protection</td><td>1 year</td></tr>
+      </tbody></table>
+    </div>
+    <div class="card border-0 shadow-sm p-4">
+      <h2 class="h5 fw-bold mb-3">Educational Prototype Disclaimer</h2>
+      <p>This is an academic capstone project. No personal data is shared with third parties for commercial purposes. All data is synthetic. <a href="{% url 'privacy' %}">View Privacy Policy &rarr;</a></p>
+    </div>
+  </div></div>
+</div>
+{% endblock %}

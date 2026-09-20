@@ -241,6 +241,58 @@ class Command(BaseCommand):
                 }
             )
 
+            # 7b. Insurance Add-on Riders
+            from policies.models import Addon, PolicyAddon
+            addons_data = [
+                ('ROADSIDE_ASSIST', 'Roadside Assistance', '24/7 towing, battery jumpstart, flat-tire, and fuel dispatch services.', Decimal('1200.00')),
+                ('ENGINE_PROTECT', 'Engine Protect', 'Covers engine damage due to water ingression, lubricant leakage, and hydro-lock.', Decimal('2500.00')),
+                ('CONSUMABLES', 'Consumables Cover', 'Covers nuts, bolts, lubricants, AC gas, and other consumables during repair.', Decimal('900.00')),
+                ('RETURN_TO_INVOICE', 'Return to Invoice', 'Compensates the full invoice value of the vehicle in case of total loss or theft.', Decimal('3200.00')),
+                ('NCB_PROTECT', 'NCB Protect', 'Preserves your No-Claim Bonus discount even after filing a claim.', Decimal('1500.00')),
+                ('KEY_PROTECT', 'Key Protect', 'Covers the cost of replacing, reprogramming, or re-configuring lost vehicle keys and locks.', Decimal('800.00')),
+                ('PASSENGER_COVER', 'Passenger Cover', 'Provides personal accident cover for occupants and named passengers.', Decimal('1000.00')),
+                ('TYRE_PROTECT', 'Tyre Protect', 'Covers tyre and rim damage from road hazards, curb impacts, and punctures.', Decimal('1100.00')),
+            ]
+            seeded_addons = []
+            for code, name, desc, cost in addons_data:
+                addon_obj, _ = Addon.objects.get_or_create(
+                    addon_code=code,
+                    defaults={
+                        'addon_name': name,
+                        'description': desc,
+                        'addon_cost': cost,
+                    }
+                )
+                seeded_addons.append(addon_obj)
+
+            # Attach sample addons to the demo policy
+            for addon_obj in seeded_addons[:3]:  # Roadside, Engine Protect, Consumables
+                PolicyAddon.objects.get_or_create(
+                    policy=pol1,
+                    addon=addon_obj,
+                    defaults={'price_at_purchase': addon_obj.addon_cost}
+                )
+            self.stdout.write(self.style.SUCCESS(f"  [OK] {len(seeded_addons)} insurance add-on riders seeded."))
+
+            # 7c. Demo Notifications
+            from core.models import Notification, NotificationType
+            Notification.objects.get_or_create(
+                recipient=cust_user,
+                title='Welcome to Nexisure!',
+                defaults={
+                    'message': 'Your account has been created. Explore your dashboard, view your policies, and manage your vehicles.',
+                    'notification_type': NotificationType.GENERAL,
+                }
+            )
+            Notification.objects.get_or_create(
+                recipient=cust_user,
+                title=f'Claim {clm_review.claim_number} Under Review',
+                defaults={
+                    'message': f'Your claim {clm_review.claim_number} is now under review by our claims team.',
+                    'notification_type': NotificationType.CLAIM_STATUS,
+                }
+            )
+
             # 8. MLOps Model Version Records
             m1, _ = ModelVersion.objects.get_or_create(
                 model_name='ClaimOccurrenceClassifier',

@@ -40,14 +40,15 @@ class CustomerQuotationListView(LoginRequiredMixin, ListView):
             if not customer:
                 return QuotationDraft.objects.none()
             return get_customer_quotations(customer)
-        elif user.is_underwriter:
-            staff = getattr(user, 'staff_profile', None)
-            return QuotationDraft.objects.filter(underwriter=staff).select_related(
+        elif user.is_staff_member:
+            from staff.services.assignment_service import StaffAssignmentService
+            assigned = StaffAssignmentService.get_assigned_customers(user)
+            return QuotationDraft.objects.filter(customer__in=assigned).select_related(
                 'customer__user', 'vehicle', 'coverage_plan'
             ).order_by('-created_at')
-        elif user.is_administrator:
+        elif user.is_administrator or user.is_superuser:
             return QuotationDraft.objects.all().select_related(
-                'customer__user', 'vehicle', 'coverage_plan', 'underwriter'
+                'customer__user', 'vehicle', 'coverage_plan', 'assigned_staff'
             ).order_by('-created_at')
         return QuotationDraft.objects.none()
 
@@ -173,12 +174,28 @@ class QuotationDetailView(View):
         if not quotation:
             raise PermissionDenied("Quotation record not found.")
 
-        # Security: Customer isolation check
+        # Security: Customer isolation and Staff assignment check
         user = self.request.user
-        if user.is_authenticated and user.is_customer:
-            customer = getattr(user, 'customer_profile', None)
-            if quotation.customer and quotation.customer != customer:
-                raise PermissionDenied("Access Denied: You cannot access another customer's quotation.")
+        if user.is_authenticated:
+            if user.is_customer:
+                customer = getattr(user, 'customer_profile', None)
+                if quotation.customer and quotation.customer != customer:
+                    raise PermissionDenied("Access Denied: You cannot access another customer's quotation.")
+            elif user.is_staff_member:
+                staff_prof = getattr(user, 'staff_profile', None)
+                if staff_prof and quotation.assigned_staff == staff_prof:
+                    pass
+                elif quotation.customer:
+                    from staff.models import StaffCustomerAssignment
+                    is_assigned = StaffCustomerAssignment.objects.filter(
+                        staff=user,
+                        customer=quotation.customer,
+                        status='ACTIVE'
+                    ).exists()
+                    if not is_assigned and not (user.is_underwriter and quotation.assigned_staff is None):
+                        raise PermissionDenied("Unauthorized: This quotation belongs to a customer not assigned to you.")
+            elif not (user.is_administrator or user.is_superuser):
+                raise PermissionDenied("Insufficient privileges to view this quotation.")
 
         return quotation
 

@@ -12,6 +12,13 @@ class CardNetwork(models.TextChoices):
     OTHER = 'OTHER', 'Other / Unknown Network'
 
 
+class PaymentMethod(models.TextChoices):
+    CREDIT_CARD = 'CREDIT_CARD', 'Credit Card'
+    DEBIT_CARD = 'DEBIT_CARD', 'Debit Card'
+    NET_BANKING = 'NET_BANKING', 'Net Banking (Simulated)'
+    UPI = 'UPI', 'UPI (Simulated)'
+
+
 class SimulatedPayment(AuditableModel):
     """
     Simulated educational payment transaction.
@@ -34,6 +41,11 @@ class SimulatedPayment(AuditableModel):
     )
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     currency = models.CharField(max_length=3, default='INR')
+    payment_method = models.CharField(
+        max_length=30,
+        choices=PaymentMethod.choices,
+        default=PaymentMethod.CREDIT_CARD,
+    )
     card_network = models.CharField(
         max_length=20,
         choices=CardNetwork.choices,

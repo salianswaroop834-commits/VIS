@@ -1,16 +1,75 @@
+import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import ListView, View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.urls import reverse
 from django.core.exceptions import PermissionDenied
-from django.http import Http404
+from django.http import Http404, JsonResponse
 
 from core.permissions import CustomerRequiredMixin
 from vehicles.models import Vehicle, VehicleType, FuelType, UsageType
 from vehicles.services.vehicle_service import VehicleService
+from vehicles.services.vehicle_lookup_service import VehicleLookupService
 from vehicles.selectors import get_vehicle_by_id, get_customer_vehicles
+from staff.models import StaffCustomerAssignment
 from core.services import ServiceValidationError
+
+
+class VehicleLookupApiView(CustomerRequiredMixin, View):
+    """
+    Step 1 AJAX endpoint: Queries vehicle registry for normalized specifications.
+    Returns preview data without persisting to database.
+    """
+    def post(self, request):
+        reg_number = request.POST.get('registration_number') or ''
+        if not reg_number and request.body:
+            try:
+                data = json.loads(request.body)
+                reg_number = data.get('registration_number', '')
+            except Exception:
+                pass
+
+        ip_address = request.META.get('REMOTE_ADDR')
+        try:
+            preview_data = VehicleLookupService.lookup_vehicle(
+                registration_number=reg_number,
+                actor=request.user,
+                actor_ip=ip_address,
+            )
+            return JsonResponse({'success': True, 'data': preview_data})
+        except ServiceValidationError as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+class VehicleChassisVerifyApiView(CustomerRequiredMixin, View):
+    """
+    AJAX endpoint for Phase G: Chassis / VIN Verification.
+    Verifies RC number + last 5 chassis characters against registry.
+    """
+    def post(self, request):
+        reg_number = request.POST.get('registration_number') or ''
+        chassis_last_5 = request.POST.get('chassis_last_5') or ''
+        if not reg_number and request.body:
+            try:
+                data = json.loads(request.body)
+                reg_number = data.get('registration_number', '')
+                chassis_last_5 = data.get('chassis_last_5', '')
+            except Exception:
+                pass
+
+        ip_address = request.META.get('REMOTE_ADDR')
+        try:
+            result = VehicleLookupService.verify_chassis(
+                registration_number=reg_number,
+                last_5_chassis=chassis_last_5,
+                actor=request.user,
+                actor_ip=ip_address,
+            )
+            return JsonResponse({'success': True, **result})
+        except ServiceValidationError as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
 
 
 class VehicleListView(CustomerRequiredMixin, ListView):
@@ -31,7 +90,7 @@ class VehicleListView(CustomerRequiredMixin, ListView):
 
 class VehicleCreateView(CustomerRequiredMixin, View):
     """
-    Registers a new vehicle asset under the customer profile.
+    Step 2: Customer confirms reviewed vehicle details and persists record.
     """
     template_name = 'vehicles/vehicle_form.html'
 
@@ -48,8 +107,14 @@ class VehicleCreateView(CustomerRequiredMixin, View):
             messages.error(request, "Customer profile not found.")
             return redirect('accounts:profile')
 
+        ip_address = request.META.get('REMOTE_ADDR')
         try:
-            vehicle = VehicleService.create_vehicle(customer, request.POST)
+            vehicle = VehicleLookupService.confirm_and_save_vehicle(
+                customer=customer,
+                data=request.POST,
+                actor=request.user,
+                actor_ip=ip_address,
+            )
             messages.success(request, f"Vehicle '{vehicle.make} {vehicle.model}' ({vehicle.registration_number}) registered successfully!")
             return redirect('customers:vehicles')
         except ServiceValidationError as e:
@@ -66,7 +131,10 @@ class VehicleDetailView(LoginRequiredMixin, View):
     """
     Displays comprehensive vehicle specifications, insurance protection status,
     quotation history, and ownership context.
-    Enforces strict customer isolation: Customer A cannot view Customer B's vehicle.
+    Enforces strict customer isolation and staff-customer assignment checks:
+    - Customer can ONLY view their own vehicle.
+    - Staff can ONLY view vehicle if customer is actively assigned to them.
+    - Admin has organization-wide view.
     """
     template_name = 'vehicles/vehicle_detail.html'
 
@@ -75,12 +143,20 @@ class VehicleDetailView(LoginRequiredMixin, View):
         if not vehicle:
             raise Http404("Vehicle not found.")
 
-        # Authorization: Customer can only view their own vehicle; Staff/Admin can view
+        # Authorization checks
         if request.user.is_customer:
             customer = getattr(request.user, 'customer_profile', None)
             if not customer or vehicle.customer != customer:
                 raise PermissionDenied("Unauthorized: You do not have permission to view this vehicle.")
-        elif not (request.user.is_underwriter or request.user.is_claims_handler or request.user.is_administrator or request.user.is_superuser):
+        elif request.user.is_staff_member:
+            is_assigned = StaffCustomerAssignment.objects.filter(
+                staff=request.user,
+                customer=vehicle.customer,
+                status='ACTIVE'
+            ).exists()
+            if not is_assigned:
+                raise PermissionDenied("Unauthorized: This vehicle belongs to a customer not assigned to you.")
+        elif not (request.user.is_administrator or request.user.is_superuser):
             raise PermissionDenied("Unauthorized access.")
 
         active_policy = vehicle.policies.filter(status='ACTIVE').select_related('coverage_plan').first()

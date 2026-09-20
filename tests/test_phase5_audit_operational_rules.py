@@ -126,15 +126,17 @@ def audit_test_data(db):
     )
 
     # Active Policy assigned to Underwriter 1
+    # Start 30 days before today to avoid UTC/IST boundary issues when filing claims with timezone.now()
     today = date.today()
+    policy_start = today - timedelta(days=30)
     policy = Policy.objects.create(
         policy_number='POL-2026-AUDIT01',
         customer=customer,
         vehicle=vehicle,
         coverage_plan=plan,
         underwriter=uw1_staff,
-        start_date=today,
-        end_date=today.replace(year=today.year + 1),
+        start_date=policy_start,
+        end_date=policy_start.replace(year=policy_start.year + 1),
         premium_amount=Decimal('1197.00'),
         deductible_amount=Decimal('1000.00'),
         status=PolicyStatus.ACTIVE,

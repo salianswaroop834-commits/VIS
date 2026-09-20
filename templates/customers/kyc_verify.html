@@ -1,0 +1,361 @@
+{% extends 'base.html' %}
+
+{% block title %}PAN & Identity KYC Verification | Nexisure{% endblock %}
+
+{% block content %}
+<section class="py-4 bg-light border-bottom">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <a href="{% url 'customers:dashboard' %}" class="small text-secondary text-decoration-none">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+                <h1 class="h3 fw-bold mb-0 mt-1">Identity & PAN KYC Verification</h1>
+                <p class="text-secondary small mb-0">Two-factor identity compliance per IRDAI digital insurance guidelines</p>
+            </div>
+            {% if is_verified %}
+            <span class="badge bg-success-subtle text-success border border-success px-3 py-2 fs-6">
+                <i class="bi bi-patch-check-fill me-1"></i> Identity Verified
+            </span>
+            {% else %}
+            <span class="badge bg-warning-subtle text-warning border border-warning px-3 py-2 fs-6">
+                <i class="bi bi-shield-exclamation me-1"></i> Verification Pending
+            </span>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<section class="py-5 bg-white">
+    <div class="container py-2" style="max-width: 680px;">
+
+        {% if is_verified %}
+        <div class="nx-card shadow-sm p-4 p-md-5 text-center border-success">
+            <div class="mb-3">
+                <i class="bi bi-patch-check-fill text-success" style="font-size: 3.5rem;"></i>
+            </div>
+            <h3 class="h4 fw-bold text-dark mb-2">KYC Verification Completed</h3>
+            <p class="text-secondary small mb-4">
+                Your government identity (PAN) has been cryptographically confirmed and linked to your registered mobile number.
+            </p>
+
+            <div class="bg-light p-3 rounded-3 text-start mb-4 border">
+                <div class="row g-2 small">
+                    <div class="col-sm-5 text-secondary">Verification Status:</div>
+                    <div class="col-sm-7 fw-semibold text-success"><i class="bi bi-check-circle-fill me-1"></i>VERIFIED</div>
+                    
+                    <div class="col-sm-5 text-secondary">Document Number:</div>
+                    <div class="col-sm-7 fw-monospace fw-semibold">{{ latest_kyc.document_number_masked|default:"ABCDE****F" }}</div>
+
+                    <div class="col-sm-5 text-secondary">Linked Phone:</div>
+                    <div class="col-sm-7 fw-monospace">{{ latest_kyc.verified_phone_masked|default:"******1234" }}</div>
+
+                    <div class="col-sm-5 text-secondary">Verified Timestamp:</div>
+                    <div class="col-sm-7 text-muted">{{ latest_kyc.verified_at|date:"M d, Y H:i"|default:"Verified" }}</div>
+                </div>
+            </div>
+
+            <a href="{% url 'customers:dashboard' %}" class="nx-btn-primary px-4 py-2">
+                Return to Customer Dashboard
+            </a>
+        </div>
+
+        {% else %}
+        <!-- KYC Multi-Step Card -->
+        <div class="nx-card shadow-sm p-4 p-md-5" id="kyc-workflow-card">
+            
+            <!-- STEP 1: PAN INPUT -->
+            <div id="kyc-step-1">
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 42px; height: 42px;">1</div>
+                    <div>
+                        <h4 class="h5 fw-bold mb-0">Enter Permanent Account Number (PAN)</h4>
+                        <small class="text-secondary">Official 10-character alphanumeric tax identifier</small>
+                    </div>
+                </div>
+
+                <div class="alert alert-info py-2 px-3 small mb-4 d-flex align-items-center gap-2">
+                    <i class="bi bi-info-circle-fill fs-5"></i>
+                    <div>The PAN-linked mobile registered with the tax authority must match your verified account phone (<strong>{{ request.user.phone_number|default:"Registered Phone" }}</strong>).</div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="panInput" class="form-label fw-semibold text-secondary small">PAN Number</label>
+                    <input type="text" id="panInput" class="form-control form-control-lg font-monospace text-uppercase" 
+                           placeholder="ABCDE1234F" maxlength="10" autocomplete="off">
+                    <div class="invalid-feedback" id="panError">Please enter a valid 10-character PAN (e.g. ABCDE1234F).</div>
+                </div>
+
+                <div id="step1-error-alert" class="alert alert-danger py-2 small d-none mb-3"></div>
+
+                <button type="button" id="btnVerifyPan" class="nx-btn-primary w-100 justify-content-center py-2 fs-6">
+                    <span id="btnVerifyPanSpinner" class="spinner-border spinner-border-sm me-2 d-none" role="status"></span>
+                    <span id="btnVerifyPanText"><i class="bi bi-shield-check me-1"></i> Verify PAN</span>
+                </button>
+            </div>
+
+            <!-- STEP 2: DETAILS FOUND & SEND OTP -->
+            <div id="kyc-step-2" class="d-none">
+                <div class="d-flex align-items-center gap-2 text-success mb-3">
+                    <i class="bi bi-check-circle-fill fs-4"></i>
+                    <h4 class="h5 fw-bold mb-0 text-success">PAN Details Found</h4>
+                </div>
+                <p class="text-secondary small mb-3">
+                    Record matched in National Registry. Confirm identity preview below to proceed with two-factor phone authentication.
+                </p>
+
+                <div class="bg-light p-3 rounded-3 mb-4 border">
+                    <div class="row g-2 small">
+                        <div class="col-sm-5 text-secondary">PAN Number:</div>
+                        <div class="col-sm-7 fw-monospace fw-semibold" id="previewPanMasked">ABCDE****F</div>
+
+                        <div class="col-sm-5 text-secondary">Cardholder Name:</div>
+                        <div class="col-sm-7 fw-semibold" id="previewName">R******** S******</div>
+
+                        <div class="col-sm-5 text-secondary">Date of Birth:</div>
+                        <div class="col-sm-7" id="previewDob">**/**/1995</div>
+
+                        <div class="col-sm-5 text-secondary">Registered Mobile:</div>
+                        <div class="col-sm-7 fw-monospace fw-bold text-primary" id="previewPhone">******1234</div>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning py-2 small mb-4 d-flex align-items-center gap-2">
+                    <i class="bi bi-phone-vibrate fs-5"></i>
+                    <div>A secure verification OTP will be sent to your registered mobile <strong><span id="maskedPhoneLabel">******1234</span></strong>.</div>
+                </div>
+
+                <div id="step2-error-alert" class="alert alert-danger py-2 small d-none mb-3"></div>
+
+                <div class="d-flex gap-2">
+                    <button type="button" id="btnBackToPan" class="nx-btn-outline py-2 w-50 justify-content-center">
+                        Edit PAN
+                    </button>
+                    <button type="button" id="btnSendOtp" class="nx-btn-primary py-2 w-50 justify-content-center">
+                        <span id="btnSendOtpSpinner" class="spinner-border spinner-border-sm me-2 d-none" role="status"></span>
+                        <span id="btnSendOtpText"><i class="bi bi-send-fill me-1"></i> Send OTP</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 3: OTP SCREEN -->
+            <div id="kyc-step-3" class="d-none">
+                <div class="text-center mb-4">
+                    <div class="bg-primary-subtle text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 56px; height: 56px;">
+                        <i class="bi bi-shield-lock-fill fs-3"></i>
+                    </div>
+                    <h4 class="h5 fw-bold mb-1">Enter Verification Code</h4>
+                    <p class="text-secondary small mb-0">
+                        Enter the 6-digit OTP sent to your registered mobile <strong class="text-dark font-monospace" id="otpTargetPhone">******1234</strong>
+                    </p>
+                </div>
+
+                <div class="mb-4 text-center">
+                    <input type="text" id="otpInput" class="form-control form-control-lg text-center font-monospace fs-4 tracking-widest mx-auto" 
+                           placeholder="&bull; &bull; &bull; &bull; &bull; &bull;" maxlength="6" style="max-width: 260px; letter-spacing: 0.5em;" autocomplete="one-time-code">
+                    <div class="form-text mt-2 small">Demo note: Use simulated code <code>123456</code> if running in sandbox environment.</div>
+                </div>
+
+                <div id="step3-error-alert" class="alert alert-danger py-2 small d-none mb-3"></div>
+
+                <button type="button" id="btnVerifyOtp" class="nx-btn-primary w-100 justify-content-center py-2 fs-6 mb-3">
+                    <span id="btnVerifyOtpSpinner" class="spinner-border spinner-border-sm me-2 d-none" role="status"></span>
+                    <span id="btnVerifyOtpText"><i class="bi bi-check2-circle me-1"></i> Verify OTP</span>
+                </button>
+
+                <div class="text-center">
+                    <button type="button" id="btnResendOtp" class="btn btn-link text-secondary text-decoration-none small">
+                        Didn't receive code? Resend OTP
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 4: SUCCESS SCREEN -->
+            <div id="kyc-step-4" class="d-none text-center">
+                <div class="mb-3">
+                    <i class="bi bi-check-circle-fill text-success" style="font-size: 3.5rem;"></i>
+                </div>
+                <h4 class="h4 fw-bold text-dark mb-2">✓ PAN Verified Successfully</h4>
+                <p class="text-secondary small mb-4">
+                    Your PAN KYC verification is complete. Full quotation issuance, policy underwriting, and high-limit claims are now unlocked for your account.
+                </p>
+                <a href="{% url 'customers:dashboard' %}" class="nx-btn-primary px-4 py-2">
+                    Proceed to Dashboard
+                </a>
+            </div>
+
+        </div>
+        {% endif %}
+
+    </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const csrfToken = '{{ csrf_token }}';
+
+    let currentVerificationId = '';
+    let currentChallengeId = '';
+    let lastPan = '';
+
+    const panInput = document.getElementById('panInput');
+    const btnVerifyPan = document.getElementById('btnVerifyPan');
+    const btnVerifyPanSpinner = document.getElementById('btnVerifyPanSpinner');
+    const btnVerifyPanText = document.getElementById('btnVerifyPanText');
+    const step1Error = document.getElementById('step1-error-alert');
+
+    const step1 = document.getElementById('kyc-step-1');
+    const step2 = document.getElementById('kyc-step-2');
+    const step3 = document.getElementById('kyc-step-3');
+    const step4 = document.getElementById('kyc-step-4');
+
+    const btnBackToPan = document.getElementById('btnBackToPan');
+    const btnSendOtp = document.getElementById('btnSendOtp');
+    const btnSendOtpSpinner = document.getElementById('btnSendOtpSpinner');
+    const btnSendOtpText = document.getElementById('btnSendOtpText');
+    const step2Error = document.getElementById('step2-error-alert');
+
+    const otpInput = document.getElementById('otpInput');
+    const btnVerifyOtp = document.getElementById('btnVerifyOtp');
+    const btnVerifyOtpSpinner = document.getElementById('btnVerifyOtpSpinner');
+    const btnVerifyOtpText = document.getElementById('btnVerifyOtpText');
+    const step3Error = document.getElementById('step3-error-alert');
+    const btnResendOtp = document.getElementById('btnResendOtp');
+
+    if (!btnVerifyPan) return; // Already verified
+
+    // Step 1: Verify PAN and initiate
+    btnVerifyPan.addEventListener('click', async function() {
+        step1Error.classList.add('d-none');
+        const pan = (panInput.value || '').trim().toUpperCase();
+        const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+
+        if (!panRegex.test(pan)) {
+            step1Error.textContent = "Please enter a valid 10-character PAN (e.g. ABCDE1234F).";
+            step1Error.classList.remove('d-none');
+            return;
+        }
+
+        lastPan = pan;
+        btnVerifyPan.disabled = true;
+        btnVerifyPanSpinner.classList.remove('d-none');
+        btnVerifyPanText.textContent = " Verifying with Registry...";
+
+        try {
+            const resp = await fetch("{% url 'customers:kyc-pan-initiate' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ pan_number: pan })
+            });
+
+            const data = await resp.json();
+            if (!data.success) {
+                step1Error.textContent = data.error || "PAN verification initiation failed.";
+                step1Error.classList.remove('d-none');
+                return;
+            }
+
+            // Successfully validated & phone matched
+            currentVerificationId = data.verification_id;
+            currentChallengeId = data.challenge_id;
+
+            // Populate Step 2 details
+            document.getElementById('previewPanMasked').textContent = data.document_number_masked || 'ABCDE****F';
+            document.getElementById('previewName').textContent = data.name_masked || 'R******** S******';
+            document.getElementById('previewDob').textContent = data.dob_masked || '**/**/1995';
+            document.getElementById('previewPhone').textContent = data.verified_phone_masked || '******1234';
+            document.getElementById('maskedPhoneLabel').textContent = data.verified_phone_masked || '******1234';
+            document.getElementById('otpTargetPhone').textContent = data.verified_phone_masked || '******1234';
+
+            // Transition to step 2
+            step1.classList.add('d-none');
+            step2.classList.remove('d-none');
+        } catch (err) {
+            step1Error.textContent = "Network or server error during PAN verification. Please try again.";
+            step1Error.classList.remove('d-none');
+        } finally {
+            btnVerifyPan.disabled = false;
+            btnVerifyPanSpinner.classList.add('d-none');
+            btnVerifyPanText.innerHTML = '<i class="bi bi-shield-check me-1"></i> Verify PAN';
+        }
+    });
+
+    btnBackToPan.addEventListener('click', function() {
+        step2.classList.add('d-none');
+        step1.classList.remove('d-none');
+    });
+
+    // Step 2: Send OTP
+    btnSendOtp.addEventListener('click', function() {
+        btnSendOtpSpinner.classList.remove('d-none');
+        btnSendOtpText.textContent = " Sending OTP...";
+        btnSendOtp.disabled = true;
+
+        setTimeout(() => {
+            btnSendOtpSpinner.classList.add('d-none');
+            btnSendOtpText.innerHTML = '<i class="bi bi-send-fill me-1"></i> Send OTP';
+            btnSendOtp.disabled = false;
+            step2.classList.add('d-none');
+            step3.classList.remove('d-none');
+            otpInput.focus();
+        }, 600);
+    });
+
+    // Step 3: Verify OTP
+    btnVerifyOtp.addEventListener('click', async function() {
+        step3Error.classList.add('d-none');
+        const code = (otpInput.value || '').trim();
+
+        if (code.length !== 6) {
+            step3Error.textContent = "Please enter the complete 6-digit verification code.";
+            step3Error.classList.remove('d-none');
+            return;
+        }
+
+        btnVerifyOtp.disabled = true;
+        btnVerifyOtpSpinner.classList.remove('d-none');
+        btnVerifyOtpText.textContent = " Validating OTP...";
+
+        try {
+            const resp = await fetch("{% url 'customers:kyc-pan-confirm' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    verification_id: currentVerificationId,
+                    challenge_id: currentChallengeId,
+                    otp_code: code
+                })
+            });
+
+            const data = await resp.json();
+            if (!data.success) {
+                step3Error.textContent = data.error || "Invalid or expired OTP code.";
+                step3Error.classList.remove('d-none');
+                return;
+            }
+
+            // Verified!
+            step3.classList.add('d-none');
+            step4.classList.remove('d-none');
+        } catch (err) {
+            step3Error.textContent = "Error verifying OTP. Please verify your connection and retry.";
+            step3Error.classList.remove('d-none');
+        } finally {
+            btnVerifyOtp.disabled = false;
+            btnVerifyOtpSpinner.classList.add('d-none');
+            btnVerifyOtpText.innerHTML = '<i class="bi bi-check2-circle me-1"></i> Verify OTP';
+        }
+    });
+
+    btnResendOtp.addEventListener('click', function() {
+        alert("A fresh OTP challenge has been resent to your verified phone.");
+    });
+});
+</script>
+{% endblock %}

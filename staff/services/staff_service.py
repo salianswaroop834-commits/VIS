@@ -47,18 +47,21 @@ class StaffService:
             assigned_region=assigned_region,
         )
 
-        # Automatically provision role-specialized domain profile
-        if user.role == UserRole.UNDERWRITER and not hasattr(profile, 'underwriter_profile'):
-            UnderwriterProfile.objects.create(
-                staff_profile=profile,
-                specialization='Commercial Fleets' if 'commercial' in department.lower() else 'General Motor',
-            )
-        elif user.role == UserRole.CLAIMS_HANDLER and not hasattr(profile, 'claims_handler_profile'):
-            ClaimsHandlerProfile.objects.create(
-                staff_profile=profile,
-                max_claim_approval_limit=max_claim_approval_limit,
-                specialization_team=department or 'General Claims',
-            )
+        # Automatically provision department-specialized domain profile
+        dept_upper = (department or '').upper()
+        if 'CLAIM' in dept_upper:
+            if not hasattr(profile, 'claims_handler_profile'):
+                ClaimsHandlerProfile.objects.create(
+                    staff_profile=profile,
+                    max_claim_approval_limit=max_claim_approval_limit,
+                    specialization_team=department or 'General Claims',
+                )
+        else:
+            if not hasattr(profile, 'underwriter_profile'):
+                UnderwriterProfile.objects.create(
+                    staff_profile=profile,
+                    specialization='Commercial Fleets' if 'commercial' in department.lower() else 'General Motor',
+                )
 
         AuditService.log(
             action=AuditAction.STAFF_CREATED,
@@ -93,7 +96,7 @@ class StaffService:
         if not to_staff.is_active or not to_staff.user.is_active:
             raise ServiceValidationError("Target underwriter must be active.")
 
-        if to_staff.user.role not in (UserRole.UNDERWRITER, UserRole.ADMINISTRATOR):
+        if not (to_staff.user.is_underwriter or to_staff.user.is_administrator):
             raise ServiceValidationError("Target staff member must have Underwriter or Administrator permissions.")
 
         active_policies = list(Policy.objects.filter(underwriter=from_staff, status=PolicyStatus.ACTIVE))
@@ -151,7 +154,7 @@ class StaffService:
                 raise ServiceValidationError("Cannot reassign workload to the same claims handler.")
             if not to_staff.is_active or not to_staff.user.is_active:
                 raise ServiceValidationError("Target claims handler must be active.")
-            if to_staff.user.role not in (UserRole.CLAIMS_HANDLER, UserRole.ADMINISTRATOR):
+            if not (to_staff.user.is_claims_handler or to_staff.user.is_administrator):
                 raise ServiceValidationError("Target staff must have Claims Handler or Administrator permissions.")
 
         in_review_claims = list(Claim.objects.filter(handler=from_staff, status=ClaimStatus.IN_REVIEW))
@@ -223,7 +226,7 @@ class StaffService:
         claims handler has in-review claims, unless force=True or reassignment occurred.
         """
         if not force:
-            if staff.user.role == UserRole.UNDERWRITER:
+            if staff.user.is_underwriter:
                 active_pol_count = Policy.objects.filter(underwriter=staff, status=PolicyStatus.ACTIVE).count()
                 if active_pol_count > 0:
                     raise ServiceValidationError(
@@ -232,7 +235,7 @@ class StaffService:
                         f"Please reassign workload to another underwriter first."
                     )
 
-            elif staff.user.role == UserRole.CLAIMS_HANDLER:
+            elif staff.user.is_claims_handler:
                 active_claim_count = Claim.objects.filter(handler=staff, status=ClaimStatus.IN_REVIEW).count()
                 if active_claim_count > 0:
                     raise ServiceValidationError(

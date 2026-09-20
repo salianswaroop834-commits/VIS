@@ -50,6 +50,14 @@ class CoverageRecommendation(AuditableModel):
     disclaimer = models.TextField(
         default='Educational decision support only. Not guaranteed financial or statutory insurance advice.'
     )
+    generated_by_model = models.CharField(max_length=100, default='Nexisure-Coverage-v1', blank=True)
+    model_version = models.ForeignKey(
+        'predictions.ModelVersion',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='recommendations',
+    )
 
     class Meta:
         verbose_name = 'Coverage Recommendation'

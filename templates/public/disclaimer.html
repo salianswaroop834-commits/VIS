@@ -1,0 +1,30 @@
+﻿{% extends "base.html" %}
+{% block title %}Platform Disclaimer | {{ PLATFORM_NAME }}{% endblock %}
+{% block meta_description %}Important disclaimer for the Nexisure educational prototype platform.{% endblock %}
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center"><div class="col-lg-8">
+    <h1 class="h2 fw-bold mb-4"><i class="bi bi-exclamation-triangle text-warning me-2"></i>Platform Disclaimer</h1>
+    <div class="alert alert-warning d-flex align-items-start gap-3 mb-4">
+      <i class="bi bi-mortarboard-fill fs-4 mt-1 flex-shrink-0"></i>
+      <div><strong>Academic Capstone Prototype</strong><br>{{ PROTOTYPE_DISCLAIMER }}</div>
+    </div>
+    <div class="card border-0 shadow-sm p-4 mb-4">
+      <h2 class="h5 fw-bold mb-3">Synthetic Data</h2>
+      <p>All customers, vehicles, policies, claims, and transactions displayed on this platform are synthetic and generated for educational demonstration purposes only. No real insurance contracts, financial obligations, or legal rights are created.</p>
+    </div>
+    <div class="card border-0 shadow-sm p-4 mb-4">
+      <h2 class="h5 fw-bold mb-3">Simulated Payments</h2>
+      <p>Payment processing on this platform uses Luhn algorithm card validation in simulation mode only. No real financial transactions are executed, and no real card or banking data is stored or transmitted.</p>
+    </div>
+    <div class="card border-0 shadow-sm p-4 mb-4">
+      <h2 class="h5 fw-bold mb-3">AI Decision Support</h2>
+      <p>Machine learning risk scores, damage severity estimations, and RAG-grounded conversational responses are decision-support tools only. They do not constitute professional insurance advice and cannot automatically approve or reject claims — all claim decisions require human review by authorized staff.</p>
+    </div>
+    <div class="card border-0 shadow-sm p-4">
+      <h2 class="h5 fw-bold mb-3">Regulatory Context</h2>
+      <p>This prototype is designed for academic evaluation under engineering and computer science capstone guidelines. It does not hold any insurance licence, regulatory approval, or financial services authorisation from IRDAI or any other regulatory body.</p>
+    </div>
+  </div></div>
+</div>
+{% endblock %}

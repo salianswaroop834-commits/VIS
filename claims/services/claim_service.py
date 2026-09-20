@@ -1,3 +1,4 @@
+import os
 import uuid
 from decimal import Decimal
 from datetime import datetime
@@ -11,7 +12,7 @@ from policies.models import Policy, PolicyStatus
 from staff.models import StaffProfile
 from audit.models import AuditAction
 from audit.services.audit_service import AuditService
-from core.services import ServiceValidationError, DataNormalizer
+from core.services import ServiceValidationError, DataNormalizer, NotificationService
 
 
 class ClaimService:
@@ -118,7 +119,16 @@ class ClaimService:
             }
         )
 
+        NotificationService.notify(
+            recipient=customer.user,
+            title="Claim Registered",
+            message=f"Claim {claim.claim_number} for policy {policy.policy_number} has been registered and placed in the shared adjudication queue.",
+            notification_type='CLAIM_STATUS',
+            action_url=f"/claims/{claim.id}/",
+        )
+
         return claim
+
 
     @classmethod
     @transaction.atomic
@@ -136,7 +146,7 @@ class ClaimService:
                 f"Only PENDING claims can be self-assigned. Current status is '{claim.status}'."
             )
 
-        if handler.user.role not in ('CLAIMS_HANDLER', 'ADMINISTRATOR'):
+        if not (handler.user.is_claims_handler or handler.user.is_administrator):
             raise ServiceValidationError("Only authorized Claims Handlers or Administrators may self-assign claims.")
 
         claim.handler = handler
@@ -267,6 +277,13 @@ class ClaimService:
             }
         )
 
+        # Notify customer of claim approval
+        NotificationService.notify_claim_status_change(
+            recipient=claim.policy.customer.user,
+            claim_number=claim.claim_number,
+            new_status='APPROVED',
+        )
+
         return claim
 
     @classmethod
@@ -315,6 +332,13 @@ class ClaimService:
             }
         )
 
+        # Notify customer of claim rejection
+        NotificationService.notify_claim_status_change(
+            recipient=claim.policy.customer.user,
+            claim_number=claim.claim_number,
+            new_status='REJECTED',
+        )
+
         return claim
 
     @classmethod
@@ -337,8 +361,7 @@ class ClaimService:
 
         # Actor role authorization
         user = actor.user if hasattr(actor, 'user') else actor
-        user_role = getattr(user, 'role', '')
-        if user_role not in ('CLAIMS_HANDLER', 'ADMINISTRATOR') and not getattr(user, 'is_superuser', False):
+        if not (getattr(user, 'is_claims_handler', False) or getattr(user, 'is_administrator', False) or getattr(user, 'is_superuser', False)):
             raise ServiceValidationError("Only authorized Claims Handlers or Administrators may execute claim settlements.")
 
         # Handler authorization check
@@ -391,7 +414,16 @@ class ClaimService:
             }
         )
 
+        NotificationService.notify(
+            recipient=claim.policy.customer.user,
+            title="Claim Settled — Payment Disbursed",
+            message=f"Your claim {claim.claim_number} has been settled. Payout amount of ₹{claim.settlement_amount:,.2f} disbursed (Ref: {simulated_ref}).",
+            notification_type='CLAIM_STATUS',
+            action_url=f"/claims/{claim.id}/",
+        )
+
         return claim
+
 
     @classmethod
     @transaction.atomic
@@ -408,11 +440,36 @@ class ClaimService:
         Enforces ownership and role-based permissions.
         """
         user = uploaded_by if hasattr(uploaded_by, 'role') else getattr(uploaded_by, 'user', None)
-        if user and getattr(user, 'role', '') == 'CUSTOMER':
+        if user and getattr(user, 'is_customer', False):
             if claim.customer.user != user:
                 raise ServiceValidationError("Unauthorized: You cannot attach documents to another customer's claim.")
-        elif user and getattr(user, 'role', '') not in ('CLAIMS_HANDLER', 'ADMINISTRATOR', 'UNDERWRITER') and not getattr(user, 'is_superuser', False):
+        elif user and not (getattr(user, 'is_claims_handler', False) or getattr(user, 'is_administrator', False) or getattr(user, 'is_underwriter', False) or getattr(user, 'is_staff_member', False) or getattr(user, 'is_superuser', False)):
             raise ServiceValidationError("Unauthorized: Insufficient privileges to attach claim documents.")
+
+        # Document Security & File Validation (Phase N)
+        if not file_obj:
+            raise ServiceValidationError("A document file is required for attachment.")
+
+        file_name = getattr(file_obj, 'name', '') or ''
+        # Sanitize filename against directory traversal
+        sanitized_filename = os.path.basename(file_name)
+        if '..' in file_name or '/' in file_name or '\\' in file_name:
+            if not sanitized_filename:
+                raise ServiceValidationError("Invalid file name: directory traversal sequence detected.")
+
+        # Check extension
+        ext = os.path.splitext(sanitized_filename)[1].lower()
+        ALLOWED_EXTENSIONS = {'.pdf', '.jpg', '.jpeg', '.png'}
+        if ext and ext not in ALLOWED_EXTENSIONS:
+            raise ServiceValidationError(
+                f"Unsupported document format '{ext}'. Only PDF and image formats (JPG, PNG) are permitted."
+            )
+
+        # Check file size (Max 10 MB)
+        MAX_UPLOAD_SIZE = 10 * 1024 * 1024
+        file_size = getattr(file_obj, 'size', 0)
+        if file_size and file_size > MAX_UPLOAD_SIZE:
+            raise ServiceValidationError("File size exceeds maximum permitted limit of 10 MB.")
 
         doc = ClaimDocument.objects.create(
             claim=claim,
@@ -420,6 +477,7 @@ class ClaimService:
             title=DataNormalizer.normalize_text(title) or "Claim Attachment",
             file=file_obj,
         )
+
 
         ClaimEvent.objects.create(
             claim=claim,

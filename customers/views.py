@@ -1,10 +1,18 @@
+import json
 from datetime import date, timedelta
+from django.views import View
 from django.views.generic import TemplateView
+from django.http import JsonResponse
+from django.shortcuts import render, redirect
+from django.contrib import messages
 from core.permissions import CustomerRequiredMixin
 from policies.models import Policy
 from vehicles.models import Vehicle
 from claims.models import Claim, ClaimStatus
 from service_requests.models import ServiceRequest
+from customers.models import CustomerProfile, KYCVerification, KYCStatus, CustomerFeedback
+from customers.services.pan_verification_service import PanVerificationService
+from core.services import ServiceValidationError
 
 
 class CustomerDashboardView(CustomerRequiredMixin, TemplateView):
@@ -27,6 +35,8 @@ class CustomerDashboardView(CustomerRequiredMixin, TemplateView):
             today = date.today()
             expiring_soon = [p for p in active_policies if 0 <= (p.end_date - today).days <= 30]
             open_claims = claims.filter(status__in=[ClaimStatus.PENDING, ClaimStatus.IN_REVIEW])
+            active_kyc = KYCVerification.objects.filter(user=self.request.user, status=KYCStatus.VERIFIED).first()
+            active_assignment = customer.staff_assignments.filter(status='ACTIVE').select_related('staff').first()
 
             ctx['customer'] = customer
             ctx['policies'] = active_policies
@@ -38,6 +48,8 @@ class CustomerDashboardView(CustomerRequiredMixin, TemplateView):
             ctx['vehicles_count'] = vehicles.count()
             ctx['open_claims_count'] = open_claims.count()
             ctx['service_requests_count'] = srv_requests.filter(status='SUBMITTED').count()
+            ctx['active_kyc'] = active_kyc
+            ctx['active_assignment'] = active_assignment
         else:
             ctx['policies'] = []
             ctx['expiring_soon'] = []
@@ -48,6 +60,8 @@ class CustomerDashboardView(CustomerRequiredMixin, TemplateView):
             ctx['vehicles_count'] = 0
             ctx['open_claims_count'] = 0
             ctx['service_requests_count'] = 0
+            ctx['active_kyc'] = None
+            ctx['active_assignment'] = None
         return ctx
 
 
@@ -84,3 +98,88 @@ class CustomerVehicleListView(CustomerRequiredMixin, TemplateView):
         customer = getattr(self.request.user, 'customer_profile', None)
         ctx['vehicles'] = Vehicle.objects.filter(customer=customer) if customer else []
         return ctx
+
+
+class CustomerKycView(CustomerRequiredMixin, View):
+    """Renders KYC & PAN verification workspace."""
+    template_name = 'customers/kyc_verify.html'
+
+    def get(self, request):
+        customer = getattr(request.user, 'customer_profile', None)
+        latest_kyc = KYCVerification.objects.filter(user=request.user).order_by('-created_at').first()
+        return render(request, self.template_name, {
+            'customer': customer,
+            'latest_kyc': latest_kyc,
+            'is_verified': customer.is_identity_verified if customer else False,
+        })
+
+
+class CustomerKycPanInitiateView(CustomerRequiredMixin, View):
+    """AJAX endpoint to initiate PAN lookup and trigger Firebase OTP."""
+
+    def post(self, request):
+        pan_number = request.POST.get('pan_number') or ''
+        if not pan_number and request.body:
+            try:
+                body = json.loads(request.body)
+                pan_number = body.get('pan_number', '')
+            except Exception:
+                pass
+
+        ip_address = request.META.get('REMOTE_ADDR')
+        try:
+            result = PanVerificationService.initiate_pan_verification(
+                user=request.user,
+                pan_number=pan_number,
+                actor_ip=ip_address,
+            )
+            return JsonResponse({'success': True, **result})
+        except ServiceValidationError as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+class CustomerKycPanConfirmView(CustomerRequiredMixin, View):
+    """AJAX endpoint to confirm OTP and finalize PAN KYC."""
+
+    def post(self, request):
+        data = request.POST
+        if not data and request.body:
+            try:
+                data = json.loads(request.body)
+            except Exception:
+                data = {}
+
+        verification_id = data.get('verification_id', '')
+        challenge_id = data.get('challenge_id', '')
+        otp_code = data.get('otp_code', '')
+
+        ip_address = request.META.get('REMOTE_ADDR')
+        try:
+            result = PanVerificationService.confirm_pan_otp(
+                user=request.user,
+                verification_id=verification_id,
+                challenge_id=challenge_id,
+                otp_code=otp_code,
+                actor_ip=ip_address,
+            )
+            return JsonResponse({'success': True, **result})
+        except ServiceValidationError as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+class CustomerFeedbackSubmitView(CustomerRequiredMixin, View):
+    """Saves Net Promoter Score (NPS) customer feedback."""
+
+    def post(self, request):
+        try:
+            score = int(request.POST.get('nps_score', 10))
+            comment = request.POST.get('comment', '').strip()
+            CustomerFeedback.objects.create(
+                user=request.user,
+                nps_score=max(0, min(10, score)),
+                comment=comment,
+            )
+            messages.success(request, "Thank you for sharing your feedback!")
+        except Exception as e:
+            messages.error(request, "Could not record feedback.")
+        return redirect('customers:dashboard')

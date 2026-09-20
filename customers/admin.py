@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import CustomerProfile
+from .models import CustomerProfile, KYCVerification, CustomerFeedback
 
 
 @admin.register(CustomerProfile)
@@ -7,7 +7,7 @@ class CustomerProfileAdmin(admin.ModelAdmin):
     list_display = (
         'customer_code',
         'get_email',
-        'get_full_name',
+        'full_name',
         'city',
         'state',
         'is_identity_verified',
@@ -16,6 +16,8 @@ class CustomerProfileAdmin(admin.ModelAdmin):
     list_filter = ('is_identity_verified', 'state', 'created_at')
     search_fields = (
         'customer_code',
+        'first_name',
+        'last_name',
         'user__email',
         'user__first_name',
         'user__last_name',
@@ -28,6 +30,28 @@ class CustomerProfileAdmin(admin.ModelAdmin):
     def get_email(self, obj):
         return obj.user.email
 
-    @admin.display(description='Full Name')
-    def get_full_name(self, obj):
-        return obj.user.get_full_name() or '-'
+
+@admin.register(KYCVerification)
+class KYCVerificationAdmin(admin.ModelAdmin):
+    list_display = (
+        'user',
+        'verification_type',
+        'document_number_masked',
+        'provider',
+        'status',
+        'verified_phone_masked',
+        'verified_at',
+        'created_at',
+    )
+    list_filter = ('status', 'verification_type', 'provider', 'created_at')
+    search_fields = ('user__email', 'document_number_masked', 'provider_reference')
+    readonly_fields = ('id', 'created_at', 'updated_at')
+    ordering = ('-created_at',)
+
+
+@admin.register(CustomerFeedback)
+class CustomerFeedbackAdmin(admin.ModelAdmin):
+    list_display = ('user', 'nps_score', 'submitted_at')
+    list_filter = ('nps_score', 'submitted_at')
+    search_fields = ('user__email', 'comment')
+    readonly_fields = ('id', 'submitted_at')

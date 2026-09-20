@@ -3,7 +3,6 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 from core.models import AuditableModel
-from accounts.models import UserRole
 
 
 class StaffStatus(models.TextChoices):
@@ -13,11 +12,52 @@ class StaffStatus(models.TextChoices):
     INACTIVE = 'INACTIVE', 'Inactive'
 
 
+class StaffDepartment(models.TextChoices):
+    UNDERWRITING = 'UNDERWRITING', 'Underwriting'
+    CLAIMS = 'CLAIMS', 'Claims'
+
+
+class Branch(AuditableModel):
+    """
+    Internal operational branch entity.
+    """
+    state = models.CharField(max_length=100)
+    city = models.CharField(max_length=100)
+    branch_opening_date = models.DateField(null=True, blank=True)
+    office_rent_cost = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+    )
+
+    class Meta:
+        verbose_name = 'Branch'
+        verbose_name_plural = 'Branches'
+        ordering = ['state', 'city']
+
+    def __str__(self):
+        return f"{self.city}, {self.state} Branch"
+
+
+class StaffProfileManager(models.Manager):
+    def create(self, **kwargs):
+        user = kwargs.get('user')
+        if user:
+            existing = self.filter(user=user).first()
+            if existing:
+                for k, v in kwargs.items():
+                    setattr(existing, k, v)
+                existing.save()
+                return existing
+        return super().create(**kwargs)
+
+
 class StaffProfile(AuditableModel):
     """
     Central organizational profile entity storing employee-level information.
     Serves as the parent anchor for specialized staff roles (Underwriters, Claims Handlers).
     """
+    objects = StaffProfileManager()
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -29,7 +69,14 @@ class StaffProfile(AuditableModel):
         db_index=True,
         help_text='Unique employee identifier e.g., UW-102 or CH-405',
     )
-    department = models.CharField(max_length=100, default='Operations')
+    first_name = models.CharField(max_length=100, blank=True)
+    last_name = models.CharField(max_length=100, blank=True)
+    department = models.CharField(
+        max_length=30,
+        choices=StaffDepartment.choices,
+        default=StaffDepartment.UNDERWRITING,
+        db_index=True,
+    )
     designation = models.CharField(max_length=100, default='Operational Specialist')
     phone_contact = models.CharField(max_length=20, blank=True)
     joining_date = models.DateField(default=timezone.now)
@@ -40,8 +87,26 @@ class StaffProfile(AuditableModel):
         db_index=True,
     )
     assigned_region = models.CharField(max_length=100, default='National')
-
-    # Retained for full backward compatibility across existing claims and policies queries
+    branch = models.ForeignKey(
+        Branch,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='staff_members',
+    )
+    manager = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='subordinates',
+    )
+    employee_level = models.CharField(max_length=30, default='L1')
+    performance_target = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+    )
     max_claim_approval_limit = models.DecimalField(
         max_digits=12,
         decimal_places=2,
@@ -55,11 +120,21 @@ class StaffProfile(AuditableModel):
         ordering = ['staff_code']
 
     def __str__(self):
-        return f"{self.staff_code} - {self.user.get_full_name() or self.user.email} ({self.user.role})"
+        name = f"{self.first_name} {self.last_name}".strip() or self.user.get_full_name() or self.user.email
+        return f"{self.staff_code} - {name} ({self.department})"
 
     @property
     def is_active_staff(self) -> bool:
         return self.status == StaffStatus.ACTIVE and self.user.is_active
+
+    @property
+    def assigned_customers(self):
+        """Returns QuerySet of CustomerProfiles actively assigned to this staff member."""
+        from customers.models import CustomerProfile
+        return CustomerProfile.objects.filter(
+            staff_assignments__staff=self.user,
+            staff_assignments__status='ACTIVE'
+        ).distinct()
 
 
 class UnderwriterProfile(AuditableModel):
@@ -93,6 +168,10 @@ class UnderwriterProfile(AuditableModel):
         default='Standard Personal Lines',
         help_text='Assigned risk portfolio book of business',
     )
+    approval_authority_level = models.CharField(
+        max_length=30,
+        default='STANDARD',
+    )
     status = models.CharField(
         max_length=20,
         choices=StaffStatus.choices,
@@ -104,7 +183,15 @@ class UnderwriterProfile(AuditableModel):
         verbose_name_plural = 'Underwriter Profiles'
 
     def __str__(self):
-        return f"Underwriter {self.staff_profile.staff_code} (Limit: {self.underwriting_limit:,.2f})"
+        return f"Underwriter {self.staff_profile.staff_code} (Limit: ₹{self.underwriting_limit:,.2f})"
+
+    @property
+    def policies_handled_count(self) -> int:
+        return self.staff_profile.underwritten_policies.count()
+
+    @property
+    def quotations_reviewed_count(self) -> int:
+        return self.staff_profile.quotations.count()
 
 
 class ClaimsHandlerProfile(AuditableModel):
@@ -143,4 +230,78 @@ class ClaimsHandlerProfile(AuditableModel):
         verbose_name_plural = 'Claims Handler Profiles'
 
     def __str__(self):
-        return f"Handler {self.staff_profile.staff_code} (Approval Limit: {self.max_claim_approval_limit:,.2f})"
+        return f"Handler {self.staff_profile.staff_code} (Approval Limit: ₹{self.max_claim_approval_limit:,.2f})"
+
+    @property
+    def claims_handled_count(self) -> int:
+        return self.staff_profile.handled_claims.count()
+
+    @property
+    def claims_settled_count(self) -> int:
+        return self.staff_profile.handled_claims.filter(status='SETTLED').count()
+
+    @property
+    def average_resolution_hours(self) -> float:
+        settled = self.staff_profile.handled_claims.filter(status='SETTLED', settled_at__isnull=False)
+        if not settled.exists():
+            return 0.0
+        total_seconds = sum((c.settled_at - c.created_at).total_seconds() for c in settled)
+        return round(total_seconds / (3600.0 * settled.count()), 1)
+
+
+class AssignmentStatus(models.TextChoices):
+    ACTIVE = 'ACTIVE', 'Active'
+    INACTIVE = 'INACTIVE', 'Inactive'
+    TRANSFERRED = 'TRANSFERRED', 'Transferred'
+
+
+class StaffCustomerAssignment(AuditableModel):
+    """
+    Persistent relationship linking a Staff member to an assigned customer.
+    Enforces that staff can only access customer records explicitly assigned to them.
+    """
+    staff = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='staff_customer_assignments',
+        help_text='Staff member assigned to this customer',
+    )
+    customer = models.ForeignKey(
+        'customers.CustomerProfile',
+        on_delete=models.CASCADE,
+        related_name='staff_assignments',
+        help_text='Assigned customer profile',
+    )
+    assigned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assignments_created',
+        help_text='Administrator who executed the assignment',
+    )
+    assigned_at = models.DateTimeField(default=timezone.now, db_index=True)
+    status = models.CharField(
+        max_length=20,
+        choices=AssignmentStatus.choices,
+        default=AssignmentStatus.ACTIVE,
+        db_index=True,
+    )
+    unassigned_at = models.DateTimeField(null=True, blank=True)
+    assignment_reason = models.CharField(max_length=255, blank=True)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = 'Staff-Customer Assignment'
+        verbose_name_plural = 'Staff-Customer Assignments'
+        ordering = ['-assigned_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['customer'],
+                condition=models.Q(status='ACTIVE'),
+                name='unique_active_staff_customer_assignment',
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.staff.email} -> {self.customer.customer_code} ({self.status})"

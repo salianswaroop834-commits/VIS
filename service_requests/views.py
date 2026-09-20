@@ -23,9 +23,15 @@ class ServiceRequestListView(LoginRequiredMixin, ListView):
             if not customer:
                 return ServiceRequest.objects.none()
             return ServiceRequest.objects.filter(customer=customer).select_related('policy__vehicle', 'assigned_staff')
-        # Staff and admins view all service requests
+        # Staff and admins view service requests
         status_filter = self.request.GET.get('status')
-        qs = ServiceRequest.objects.all().select_related('customer__user', 'policy__vehicle', 'assigned_staff')
+        if user.is_administrator or user.is_superuser:
+            qs = ServiceRequest.objects.all().select_related('customer__user', 'policy__vehicle', 'assigned_staff')
+        else:
+            from staff.services.assignment_service import StaffAssignmentService
+            assigned = StaffAssignmentService.get_assigned_customers(user)
+            qs = ServiceRequest.objects.filter(customer__in=assigned).select_related('customer__user', 'policy__vehicle', 'assigned_staff')
+
         if status_filter and status_filter in ServiceRequestStatus.values:
             qs = qs.filter(status=status_filter)
         return qs
@@ -58,23 +64,21 @@ class ServiceRequestCreateView(CustomerRequiredMixin, View):
             title = request.POST.get('title')
             description = request.POST.get('description')
             policy_id = request.POST.get('policy_id')
+            policy = get_object_or_404(Policy, pk=policy_id) if policy_id else None
 
-            policy = None
-            if policy_id:
-                policy = get_object_or_404(Policy, pk=policy_id)
-                if policy.customer != customer:
-                    raise PermissionDenied("Unauthorized: You may only file service requests against your own policies.")
+            if policy and policy.customer != customer:
+                raise PermissionDenied("Unauthorized: Policy does not belong to your account.")
 
-            srv = ServiceRequestService.create_service_request(
+            req = ServiceRequestService.create_service_request(
                 customer=customer,
+                policy=policy,
                 request_type=req_type,
                 title=title,
                 description=description,
-                policy=policy,
+                actor=request.user,
             )
-            messages.success(request, f"Service request '{srv.request_number}' submitted successfully.")
-            return redirect('service_requests:detail', pk=srv.pk)
-
+            messages.success(request, f"Service request '{req.request_number}' submitted successfully.")
+            return redirect('service_requests:detail', pk=req.pk)
         except PermissionDenied:
             raise
         except ServiceValidationError as e:
@@ -97,7 +101,16 @@ class ServiceRequestDetailView(LoginRequiredMixin, DetailView):
             customer = getattr(user, 'customer_profile', None)
             if not customer or req.customer != customer:
                 raise PermissionDenied("You are not authorized to view this service request.")
-        elif not (user.is_underwriter or user.is_claims_handler or user.is_administrator):
+        elif user.is_staff_member:
+            from staff.models import StaffCustomerAssignment
+            is_assigned = StaffCustomerAssignment.objects.filter(
+                staff=user,
+                customer=req.customer,
+                status='ACTIVE'
+            ).exists()
+            if not is_assigned:
+                raise PermissionDenied("Unauthorized: This service request belongs to a customer not assigned to you.")
+        elif not (user.is_administrator or user.is_superuser):
             raise PermissionDenied("Insufficient privileges to view this service request.")
         return req
 

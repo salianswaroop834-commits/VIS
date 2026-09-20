@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import StaffProfile, UnderwriterProfile, ClaimsHandlerProfile
+from .models import StaffProfile, UnderwriterProfile, ClaimsHandlerProfile, Branch, StaffCustomerAssignment
 
 
 class UnderwriterProfileInline(admin.StackedInline):
@@ -20,6 +20,14 @@ class ClaimsHandlerProfileInline(admin.StackedInline):
     extra = 0
 
 
+@admin.register(Branch)
+class BranchAdmin(admin.ModelAdmin):
+    list_display = ('city', 'state', 'branch_opening_date', 'office_rent_cost', 'is_active')
+    list_filter = ('state', 'is_active')
+    search_fields = ('city', 'state')
+    readonly_fields = ('id', 'created_at', 'updated_at')
+
+
 @admin.register(StaffProfile)
 class StaffProfileAdmin(admin.ModelAdmin):
     list_display = (
@@ -35,6 +43,8 @@ class StaffProfileAdmin(admin.ModelAdmin):
     list_filter = ('department', 'status', 'assigned_region', 'user__role')
     search_fields = (
         'staff_code',
+        'first_name',
+        'last_name',
         'user__email',
         'user__first_name',
         'user__last_name',
@@ -107,3 +117,32 @@ class ClaimsHandlerProfileAdmin(admin.ModelAdmin):
     @admin.display(description='Email', ordering='staff_profile__user__email')
     def get_email(self, obj):
         return obj.staff_profile.user.email
+
+
+@admin.register(StaffCustomerAssignment)
+class StaffCustomerAssignmentAdmin(admin.ModelAdmin):
+    list_display = (
+        'staff',
+        'get_customer_code',
+        'get_customer_email',
+        'status',
+        'assigned_at',
+        'assigned_by',
+    )
+    list_filter = ('status', 'assigned_at')
+    search_fields = (
+        'staff__email',
+        'customer__customer_code',
+        'customer__user__email',
+        'assignment_reason',
+    )
+    readonly_fields = ('id', 'created_at', 'updated_at')
+    ordering = ('-assigned_at',)
+
+    @admin.display(description='Customer Code', ordering='customer__customer_code')
+    def get_customer_code(self, obj):
+        return obj.customer.customer_code
+
+    @admin.display(description='Customer Email', ordering='customer__user__email')
+    def get_customer_email(self, obj):
+        return obj.customer.user.email

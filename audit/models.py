@@ -55,11 +55,24 @@ class AuditAction(models.TextChoices):
     SERVICE_REQUEST_RESOLVED = 'SERVICE_REQUEST_RESOLVED', 'Service Request Resolved'
     SERVICE_REQUEST_REJECTED = 'SERVICE_REQUEST_REJECTED', 'Service Request Rejected'
 
+    # KYC & Identity operations
+    KYC_VERIFICATION_STARTED = 'KYC_VERIFICATION_STARTED', 'KYC Verification Started'
+    KYC_VERIFIED = 'KYC_VERIFIED', 'KYC Verified'
+    KYC_FAILED = 'KYC_FAILED', 'KYC Verification Failed'
+    USER_REGISTERED = 'USER_REGISTERED', 'User Registered'
+
+    # Assignment operations
+    CUSTOMER_ASSIGNED = 'CUSTOMER_ASSIGNED', 'Customer Assigned to Staff'
+    CUSTOMER_TRANSFERRED = 'CUSTOMER_TRANSFERRED', 'Customer Transferred to Staff'
+    CUSTOMER_UNASSIGNED = 'CUSTOMER_UNASSIGNED', 'Customer Unassigned from Staff'
+    STAFF_SUSPENDED = 'STAFF_SUSPENDED', 'Staff Suspended'
+
     # AI & Tool operations
     CHATBOT_TOOL_EXECUTED = 'CHATBOT_TOOL_EXECUTED', 'Chatbot Tool Executed'
     PREDICTION_CREATED = 'PREDICTION_CREATED', 'ML Prediction Created'
     MODEL_VERSION_PROMOTED = 'MODEL_VERSION_PROMOTED', 'Model Version Promoted'
     PAYMENT_PROCESSED = 'PAYMENT_PROCESSED', 'Payment Processed'
+    VEHICLE_LOOKUP = 'VEHICLE_LOOKUP', 'Vehicle Registry Lookup'
 
 
 class AuditLogQuerySet(models.QuerySet):

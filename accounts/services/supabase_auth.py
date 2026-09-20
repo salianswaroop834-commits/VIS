@@ -1,7 +1,7 @@
 import logging
 from typing import Optional, Dict, Any
 from django.conf import settings
-from accounts.models import User
+from accounts.models import User, UserRole
 from accounts.services.otp_service import OtpService
 
 logger = logging.getLogger(__name__)
@@ -215,14 +215,14 @@ class SupabaseAuthService:
             user = User.objects.create(
                 username=username_base,
                 email=email,
-                role='CUSTOMER',
+                role=UserRole.USER,
                 supabase_uid=uid,
                 email_verified=True,
                 is_staff=False,
                 is_superuser=False,
             )
 
-        if user.role == 'CUSTOMER' and not hasattr(user, 'customer_profile'):
+        if user.is_customer and not hasattr(user, 'customer_profile'):
             from customers.models import CustomerProfile
             CustomerProfile.objects.get_or_create(
                 user=user,

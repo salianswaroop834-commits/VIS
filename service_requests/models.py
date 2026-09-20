@@ -24,11 +24,18 @@ class ServiceRequestStatus(models.TextChoices):
     REJECTED = 'REJECTED', 'Rejected'
 
 
+class ServiceRequestPriority(models.TextChoices):
+    LOW = 'LOW', 'Low'
+    NORMAL = 'NORMAL', 'Normal'
+    HIGH = 'HIGH', 'High'
+    URGENT = 'URGENT', 'Urgent'
+
+
 class ServiceRequest(AuditableModel):
     """
     Policy service request entity.
-    Allows customers to initiate servicing requests that underwriters
-    or operations staff can review, action, and complete.
+    Allows customers to initiate servicing requests that operations staff
+    can review, action, and complete.
     """
     request_number = models.CharField(max_length=40, unique=True, db_index=True)
     customer = models.ForeignKey(
@@ -64,13 +71,32 @@ class ServiceRequest(AuditableModel):
         blank=True,
         related_name='assigned_service_requests',
     )
+    assigned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='delegated_service_requests',
+    )
     change_payload = models.JSONField(
         default=dict,
         blank=True,
         help_text='Structured parameter changes for policy endorsement adjudication',
     )
     resolution_notes = models.TextField(blank=True)
+    resolved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='resolved_service_requests',
+    )
     resolved_at = models.DateTimeField(null=True, blank=True)
+    priority = models.CharField(
+        max_length=20,
+        choices=ServiceRequestPriority.choices,
+        default=ServiceRequestPriority.NORMAL,
+    )
 
     class Meta:
         verbose_name = 'Service Request'

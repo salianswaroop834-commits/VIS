@@ -14,6 +14,20 @@ class ClaimStatus(models.TextChoices):
     SETTLED = 'SETTLED', 'Settled'
 
 
+class ClaimType(models.TextChoices):
+    ACCIDENT = 'ACCIDENT', 'Accident / Collision'
+    THEFT = 'THEFT', 'Vehicle Theft'
+    FIRE = 'FIRE', 'Fire Damage'
+    NATURAL_DISASTER = 'NATURAL_DISASTER', 'Natural Disaster / Flood'
+
+
+class ClaimPriority(models.TextChoices):
+    LOW = 'LOW', 'Low'
+    MEDIUM = 'MEDIUM', 'Medium'
+    HIGH = 'HIGH', 'High'
+    URGENT = 'URGENT', 'Urgent'
+
+
 class ClaimEventType(models.TextChoices):
     CLAIM_CREATED = 'CLAIM_CREATED', 'Claim Created'
     CLAIM_ASSIGNED = 'CLAIM_ASSIGNED', 'Claim Assigned / Picked Up'
@@ -57,7 +71,20 @@ class Claim(AuditableModel):
     incident_date = models.DateTimeField(db_index=True)
     incident_location = models.CharField(max_length=255)
     incident_description = models.TextField()
+    claim_type = models.CharField(
+        max_length=30,
+        choices=ClaimType.choices,
+        default=ClaimType.ACCIDENT,
+        db_index=True,
+    )
+    claim_severity = models.CharField(max_length=30, default='MODERATE')
     estimated_loss_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    approved_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
     settlement_amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,
@@ -82,6 +109,14 @@ class Claim(AuditableModel):
         default=ClaimStatus.PENDING,
         db_index=True,
     )
+    priority = models.CharField(
+        max_length=20,
+        choices=ClaimPriority.choices,
+        default=ClaimPriority.MEDIUM,
+    )
+    assigned_at = models.DateTimeField(null=True, blank=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         verbose_name = 'Claim'
@@ -135,6 +170,26 @@ class ClaimDocument(AuditableModel):
     document_type = models.CharField(max_length=30, choices=DocType.choices)
     title = models.CharField(max_length=150)
     file = models.FileField(upload_to='claims/documents/%Y/%m/')
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='uploaded_claim_documents',
+    )
+    verification_status = models.CharField(
+        max_length=30,
+        default='PENDING',
+        choices=[('PENDING', 'Pending Verification'), ('VERIFIED', 'Verified'), ('REJECTED', 'Rejected')],
+    )
+    verified_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='verified_claim_documents',
+    )
+    verified_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         verbose_name = 'Claim Document'

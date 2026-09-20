@@ -1,7 +1,7 @@
 import re
 import uuid
 from decimal import Decimal
-from datetime import datetime, date
+from datetime import datetime
 from typing import Dict, Any, List, Optional
 from django.utils import timezone
 from django.db import transaction
@@ -635,7 +635,7 @@ class ChatbotService:
                     session=session,
                     user=user,
                     policy_number=first_policy['policy_number'],
-                    incident_date_str=str(date.today()),
+                    incident_date_str=timezone.now().strftime('%Y-%m-%d'),  # UTC date to avoid timezone boundary issues
                     estimated_amount=15000.0,
                     description="Customer initiated accident report via AI Assistant.",
                 )

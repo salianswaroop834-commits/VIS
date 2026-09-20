@@ -12,7 +12,8 @@ from customers.models import CustomerProfile
 from accounts.models import User
 from audit.models import AuditAction
 from audit.services.audit_service import AuditService
-from core.services import ServiceValidationError, DataNormalizer
+from core.services import ServiceValidationError, DataNormalizer, NotificationService
+
 
 
 def add_years_to_date(start: date, years: int) -> date:
@@ -104,7 +105,16 @@ class PolicyService:
             }
         )
 
+        NotificationService.notify(
+            recipient=policy.customer.user,
+            title="Insurance Policy Issued",
+            message=f"Your policy {policy.policy_number} is active for {policy.vehicle.registration_number}. Term: {policy.start_date} to {policy.end_date}.",
+            notification_type='GENERAL',
+            action_url=f"/policies/{policy.id}/",
+        )
+
         return policy
+
 
     @classmethod
     @transaction.atomic
@@ -177,7 +187,16 @@ class PolicyService:
             }
         )
 
+        NotificationService.notify(
+            recipient=new_policy.customer.user,
+            title="Insurance Policy Renewed",
+            message=f"Policy renewed under new Policy Number {new_policy.policy_number}. Continuous coverage active until {new_policy.end_date}.",
+            notification_type='RENEWAL_REMINDER',
+            action_url=f"/policies/{new_policy.id}/",
+        )
+
         return new_policy
+
 
     @classmethod
     def generate_policy_certificate(
@@ -262,7 +281,16 @@ class PolicyService:
             }
         )
 
+        NotificationService.notify(
+            recipient=policy.customer.user,
+            title="Insurance Policy Cancelled",
+            message=f"Policy {policy.policy_number} has been cancelled. Calculated simulated refund: ₹{simulated_refund:,.2f}.",
+            notification_type='GENERAL',
+            action_url=f"/policies/{policy.id}/",
+        )
+
         return policy
+
 
     @classmethod
     def request_policy_endorsement(
@@ -463,6 +491,14 @@ class PolicyService:
             )
 
         return service_request
+
+    @classmethod
+    def approve_endorsement_request(cls, service_request, underwriter_user, notes=""):
+        return cls.adjudicate_endorsement(service_request, reviewer=underwriter_user, decision='APPROVE', notes=notes)
+
+    @classmethod
+    def reject_endorsement_request(cls, service_request, underwriter_user, notes=""):
+        return cls.adjudicate_endorsement(service_request, reviewer=underwriter_user, decision='REJECT', notes=notes)
 
     @classmethod
     def search_policies(

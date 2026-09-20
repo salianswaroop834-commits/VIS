@@ -3,98 +3,330 @@
 {% block title %}Register Vehicle Asset | Nexisure{% endblock %}
 
 {% block content %}
+<section class="py-4 bg-light border-bottom">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <a href="{% url 'customers:vehicles' %}" class="small text-secondary text-decoration-none">
+                    <i class="bi bi-arrow-left"></i> Back to My Vehicles
+                </a>
+                <h1 class="h3 fw-bold mb-0 mt-1">Register Vehicle Asset</h1>
+                <p class="text-secondary small mb-0">Direct VAHAN Registry Lookup & Verification Workflow</p>
+            </div>
+            <span class="badge bg-primary-subtle text-primary border border-primary px-3 py-2">
+                <i class="bi bi-shield-check me-1"></i> Registry Verified Onboarding
+            </span>
+        </div>
+    </div>
+</section>
+
 <section class="py-5 bg-white">
-    <div class="container py-2 max-w-700">
-        <div class="mb-4">
-            <a href="{% url 'customers:vehicles' %}" class="small text-secondary text-decoration-none">
-                <i class="bi bi-arrow-left"></i> Back to My Vehicles
-            </a>
-            <h1 class="h3 fw-bold mt-2">Register Vehicle Asset</h1>
-            <p class="text-secondary small">Add authorized vehicle specifications to your insurance portfolio</p>
+    <div class="container py-2" style="max-width: 860px;">
+
+        <!-- STEP 1: REGISTRY LOOKUP CARD -->
+        <div class="nx-card shadow-sm p-4 p-md-5 mb-4" id="lookupCard">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 40px; height: 40px;">1</div>
+                <div>
+                    <h4 class="h5 fw-bold mb-0">Vehicle Registry Lookup</h4>
+                    <p class="text-secondary small mb-0">Enter the vehicle's official registration number to automatically pull certified manufacturer specifications.</p>
+                </div>
+            </div>
+
+            <div class="row g-2 align-items-end mt-2">
+                <div class="col-md-8">
+                    <label for="regNumberInput" class="form-label fw-semibold text-secondary small">Registration Number / License Plate</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light font-monospace fw-bold"><i class="bi bi-car-front"></i></span>
+                        <input type="text" id="regNumberInput" class="form-control form-control-lg font-monospace text-uppercase fw-bold" 
+                               placeholder="e.g. MH12AB1234 or DL01AB1234" maxlength="12" autocomplete="off" value="{{ data.registration_number }}">
+                    </div>
+                    <div class="form-text small">Standard Indian vehicle format: State code (2) + District (2) + Series (1-3) + Number (4).</div>
+                </div>
+                <div class="col-md-4">
+                    <button type="button" id="btnFetchVehicle" class="nx-btn-primary w-100 justify-content-center py-2" style="height: 48px;">
+                        <span id="btnFetchSpinner" class="spinner-border spinner-border-sm me-2 d-none" role="status"></span>
+                        <span id="btnFetchText"><i class="bi bi-search me-1"></i> Fetch Vehicle Details</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="lookupErrorAlert" class="alert alert-danger py-2 small mt-3 d-none"></div>
         </div>
 
-        <div class="nx-card shadow-sm p-4 p-md-5">
-            <form method="post" action="{% url 'vehicles:create' %}" class="d-flex flex-column gap-3">
+        <!-- STEP 2: REVIEW, EDIT & CONFIRM FORM -->
+        <div class="nx-card shadow-sm p-4 p-md-5 d-none" id="reviewCard">
+            <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 40px; height: 40px;">2</div>
+                    <div>
+                        <h4 class="h5 fw-bold text-success mb-0">
+                            <i class="bi bi-check-circle-fill me-1"></i> Vehicle Details Found
+                        </h4>
+                        <small class="text-secondary">Review verified registry data before confirming into your portfolio.</small>
+                    </div>
+                </div>
+                <button type="button" id="btnSearchAgain" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-repeat me-1"></i> Change Reg Number
+                </button>
+            </div>
+
+            <form method="post" action="{% url 'vehicles:create' %}" id="vehicleConfirmForm" class="d-flex flex-column gap-4">
                 {% csrf_token %}
+
+                <!-- Hidden inputs for non-editable technical identifiers -->
+                <input type="hidden" name="registration_number" id="f_registration_number">
+                <input type="hidden" name="registration_date" id="f_registration_date">
+                <input type="hidden" name="fitness_upto" id="f_fitness_upto">
+                <input type="hidden" name="insurance_upto" id="f_insurance_upto">
+
+                <!-- Registry Verified Summary Banner -->
+                <div class="alert alert-info py-3 px-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div>
+                        <span class="badge bg-primary me-2"><i class="bi bi-shield-check me-1"></i> Fetched from vehicle registry</span>
+                        <span class="small text-secondary">Owner: <strong id="lblOwnerName" class="text-dark">Owner Name</strong></span>
+                    </div>
+                    <div class="small text-muted font-monospace">
+                        Reg State: <span id="lblRegState" class="fw-bold text-dark">State</span> | City: <span id="lblRegCity" class="fw-bold text-dark">City</span>
+                    </div>
+                </div>
+
+                <!-- Core Specifications -->
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary small">Vehicle Make</label>
-                        <input type="text" class="form-control" name="make" value="{{ data.make }}" required placeholder="e.g. Toyota">
+                        <label class="form-label fw-semibold text-secondary small d-flex justify-content-between">
+                            <span>Vehicle Make</span>
+                            <span class="badge bg-light text-muted border">Registry Data</span>
+                        </label>
+                        <input type="text" class="form-control" name="make" id="f_make" required>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary small">Model</label>
-                        <input type="text" class="form-control" name="model" value="{{ data.model }}" required placeholder="e.g. RAV4 XLE">
+                        <label class="form-label fw-semibold text-secondary small d-flex justify-content-between">
+                            <span>Model</span>
+                            <span class="badge bg-light text-muted border">Registry Data</span>
+                        </label>
+                        <input type="text" class="form-control" name="model" id="f_model" required>
                     </div>
                 </div>
 
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary small">License Plate / Registration</label>
-                        <input type="text" class="form-control font-monospace text-uppercase" name="registration_number" value="{{ data.registration_number }}" required placeholder="DL01AB1234">
-                        <small class="text-muted">Normalized automatically to uppercase alphanumeric.</small>
+                        <label class="form-label fw-semibold text-secondary small d-flex justify-content-between">
+                            <span>Variant / Trim</span>
+                            <span class="badge bg-light text-muted border">Registry Data</span>
+                        </label>
+                        <input type="text" class="form-control" name="variant" id="f_variant" placeholder="e.g. VXI, Titanium, ZX">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary small">Manufacture Year</label>
-                        <input type="number" class="form-control" name="manufacture_year" value="{{ data.manufacture_year|default:'2022' }}" required min="1980" max="2027">
+                        <label class="form-label fw-semibold text-secondary small d-flex justify-content-between">
+                            <span>Manufacturing Year</span>
+                            <span class="badge bg-light text-muted border">Registry Data</span>
+                        </label>
+                        <input type="number" class="form-control" name="manufacture_year" id="f_manufacture_year" required min="1980" max="2030">
                     </div>
                 </div>
 
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary small">Chassis Number / VIN</label>
-                        <input type="text" class="form-control font-monospace text-uppercase" name="chassis_number" value="{{ data.chassis_number }}" required placeholder="1HGCV1F32NA012984">
+                        <label class="form-label fw-semibold text-secondary small d-flex justify-content-between">
+                            <span>Chassis Number / VIN</span>
+                            <span class="badge bg-light text-muted border">Registry Verified</span>
+                        </label>
+                        <input type="text" class="form-control font-monospace text-uppercase" name="chassis_number" id="f_chassis_number" required>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary small">Engine Number (Optional)</label>
-                        <input type="text" class="form-control font-monospace text-uppercase" name="engine_number" value="{{ data.engine_number }}" placeholder="ENG8819234">
+                        <label class="form-label fw-semibold text-secondary small d-flex justify-content-between">
+                            <span>Engine Number</span>
+                            <span class="badge bg-light text-muted border">Registry Verified</span>
+                        </label>
+                        <input type="text" class="form-control font-monospace text-uppercase" name="engine_number" id="f_engine_number">
                     </div>
                 </div>
 
                 <div class="row g-3">
                     <div class="col-md-4">
                         <label class="form-label fw-semibold text-secondary small">Vehicle Body Type</label>
-                        <select class="form-select" name="vehicle_type">
+                        <select class="form-select" name="vehicle_type" id="f_vehicle_type">
                             {% for code, name in vehicle_types %}
-                                <option value="{{ code }}" {% if data.vehicle_type == code %}selected{% endif %}>{{ name }}</option>
+                                <option value="{{ code }}">{{ name }}</option>
                             {% endfor %}
                         </select>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-semibold text-secondary small">Fuel / Powertrain</label>
-                        <select class="form-select" name="fuel_type">
+                        <select class="form-select" name="fuel_type" id="f_fuel_type">
                             {% for code, name in fuel_types %}
-                                <option value="{{ code }}" {% if data.fuel_type == code %}selected{% endif %}>{{ name }}</option>
+                                <option value="{{ code }}">{{ name }}</option>
                             {% endfor %}
                         </select>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-semibold text-secondary small">Usage Profile</label>
-                        <select class="form-select" name="usage_type">
+                        <select class="form-select" name="usage_type" id="f_usage_type">
                             {% for code, name in usage_types %}
-                                <option value="{{ code }}" {% if data.usage_type == code %}selected{% endif %}>{{ name }}</option>
+                                <option value="{{ code }}">{{ name }}</option>
                             {% endfor %}
                         </select>
                     </div>
                 </div>
 
-                <div>
-                    <label class="form-label fw-semibold text-secondary small">Insured Declared Value (IDV in ₹)</label>
-                    <div class="input-group">
-                        <span class="input-group-text">₹</span>
-                        <input type="number" class="form-control font-monospace" name="vehicle_value" value="{{ data.vehicle_value|default:'25000' }}" required min="500" step="500">
+                <!-- Registration Location & Owner -->
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-secondary small">Registered Owner Name</label>
+                        <input type="text" class="form-control" name="owner_name" id="f_owner_name">
                     </div>
-
-                    <small class="text-muted">Current assessed market valuation for collision and total loss protection.</small>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-secondary small">Registration State</label>
+                        <input type="text" class="form-control" name="registration_state" id="f_registration_state">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-secondary small">Registration City</label>
+                        <input type="text" class="form-control" name="registration_city" id="f_registration_city">
+                    </div>
                 </div>
 
-                <div class="d-flex gap-2 justify-content-end mt-3">
-                    <a href="{% url 'customers:vehicles' %}" class="nx-btn-outline py-2">Cancel</a>
-                    <button type="submit" class="nx-btn-primary py-2">
-                        <i class="bi bi-check2-circle"></i> Save & Register Vehicle
+                <!-- Dates & IDV -->
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-secondary small">Fitness Valid Until</label>
+                        <input type="text" class="form-control bg-light" id="disp_fitness" readonly>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-secondary small">Existing Insurance Valid Until</label>
+                        <input type="text" class="form-control bg-light" id="disp_insurance" readonly>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-secondary small">Insured Declared Value (IDV in ₹)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">₹</span>
+                            <input type="number" class="form-control font-monospace fw-bold" name="vehicle_value" id="f_vehicle_value" required min="10000" step="1000">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-3 justify-content-end pt-3 border-top">
+                    <a href="{% url 'customers:vehicles' %}" class="nx-btn-outline py-2 px-4">Cancel</a>
+                    <button type="submit" class="nx-btn-primary py-2 px-4 fs-6">
+                        <i class="bi bi-check2-circle me-1"></i> Confirm & Save Vehicle
                     </button>
                 </div>
             </form>
         </div>
+
     </div>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const csrfToken = '{{ csrf_token }}';
+
+    const regInput = document.getElementById('regNumberInput');
+    const btnFetch = document.getElementById('btnFetchVehicle');
+    const btnSpinner = document.getElementById('btnFetchSpinner');
+    const btnText = document.getElementById('btnFetchText');
+    const errorAlert = document.getElementById('lookupErrorAlert');
+
+    const lookupCard = document.getElementById('lookupCard');
+    const reviewCard = document.getElementById('reviewCard');
+    const btnSearchAgain = document.getElementById('btnSearchAgain');
+
+    btnFetch.addEventListener('click', async function() {
+        errorAlert.classList.add('d-none');
+        const regNumber = (regInput.value || '').trim().toUpperCase();
+
+        if (regNumber.length < 5) {
+            errorAlert.textContent = "Please enter a valid vehicle registration number (e.g. MH12AB1234).";
+            errorAlert.classList.remove('d-none');
+            return;
+        }
+
+        btnFetch.disabled = true;
+        btnSpinner.classList.remove('d-none');
+        btnText.textContent = " Loading registry data...";
+
+        try {
+            const resp = await fetch("{% url 'vehicles:lookup' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ registration_number: regNumber })
+            });
+
+            const res = await resp.json();
+            if (!res.success) {
+                errorAlert.textContent = res.error || "Vehicle details could not be retrieved from registry.";
+                errorAlert.classList.remove('d-none');
+                return;
+            }
+
+            const data = res.data;
+
+            // Populate Form Fields
+            document.getElementById('f_registration_number').value = data.registration_number || regNumber;
+            document.getElementById('f_make').value = data.make || '';
+            document.getElementById('f_model').value = data.model || '';
+            document.getElementById('f_variant').value = data.variant || '';
+            document.getElementById('f_manufacture_year').value = data.manufacture_year || new Date().getFullYear();
+            document.getElementById('f_chassis_number').value = data.chassis_number || '';
+            document.getElementById('f_engine_number').value = data.engine_number || '';
+            document.getElementById('f_owner_name').value = data.owner_name || '';
+            document.getElementById('f_registration_state').value = data.registration_state || '';
+            document.getElementById('f_registration_city').value = data.registration_city || '';
+            document.getElementById('f_registration_date').value = data.registration_date || '';
+            document.getElementById('f_fitness_upto').value = data.fitness_upto || '';
+            document.getElementById('f_insurance_upto').value = data.insurance_upto || '';
+            document.getElementById('f_vehicle_value').value = data.vehicle_value || 650000;
+
+            // Display Labels
+            document.getElementById('lblOwnerName').textContent = data.owner_name || 'Vehicle Owner';
+            document.getElementById('lblRegState').textContent = data.registration_state || 'N/A';
+            document.getElementById('lblRegCity').textContent = data.registration_city || 'N/A';
+            document.getElementById('disp_fitness').value = data.fitness_upto || 'N/A';
+            document.getElementById('disp_insurance').value = data.insurance_upto || 'N/A';
+
+            // Select matching options
+            if (data.vehicle_type) {
+                const vt = document.getElementById('f_vehicle_type');
+                for (let i = 0; i < vt.options.length; i++) {
+                    if (vt.options[i].value === data.vehicle_type) {
+                        vt.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            if (data.fuel_type) {
+                const ft = document.getElementById('f_fuel_type');
+                for (let i = 0; i < ft.options.length; i++) {
+                    if (ft.options[i].value === data.fuel_type) {
+                        ft.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            // Show review card
+            reviewCard.classList.remove('d-none');
+            reviewCard.scrollIntoView({ behavior: 'smooth' });
+
+        } catch (err) {
+            errorAlert.textContent = "Network error during registry lookup. Please try again.";
+            errorAlert.classList.remove('d-none');
+        } finally {
+            btnFetch.disabled = false;
+            btnSpinner.classList.add('d-none');
+            btnText.innerHTML = '<i class="bi bi-search me-1"></i> Fetch Vehicle Details';
+        }
+    });
+
+    btnSearchAgain.addEventListener('click', function() {
+        reviewCard.classList.add('d-none');
+        lookupCard.scrollIntoView({ behavior: 'smooth' });
+        regInput.focus();
+    });
+});
+</script>
 {% endblock %}

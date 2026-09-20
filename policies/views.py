@@ -7,7 +7,33 @@ from django.http import HttpResponse
 from django.urls import reverse
 from policies.models import Policy, PolicyStatus
 from policies.services.policy_service import PolicyService
+from staff.models import StaffCustomerAssignment
+from staff.services.assignment_service import StaffAssignmentService
 from core.services import ServiceValidationError
+
+
+def _check_policy_access(user, policy: Policy):
+    """Enforces customer ownership or active staff assignment check."""
+    if user.is_administrator or user.is_superuser:
+        return
+    if user.is_customer:
+        customer = getattr(user, 'customer_profile', None)
+        if not customer or policy.customer != customer:
+            raise PermissionDenied("You are not authorized to access this policy.")
+        return
+    if user.is_staff_member:
+        staff_prof = getattr(user, 'staff_profile', None)
+        if staff_prof and policy.assigned_staff == staff_prof:
+            return
+        is_assigned = StaffCustomerAssignment.objects.filter(
+            staff=user,
+            customer=policy.customer,
+            status='ACTIVE'
+        ).exists()
+        if not is_assigned:
+            raise PermissionDenied("Unauthorized: This policy belongs to a customer not assigned to you.")
+        return
+    raise PermissionDenied("Insufficient privileges to access this policy.")
 
 
 class PolicyListView(LoginRequiredMixin, ListView):
@@ -22,10 +48,10 @@ class PolicyListView(LoginRequiredMixin, ListView):
             if not customer:
                 return Policy.objects.none()
             return Policy.objects.filter(customer=customer).select_related('vehicle', 'coverage_plan')
-        elif user.is_underwriter:
-            staff = getattr(user, 'staff_profile', None)
-            return Policy.objects.filter(underwriter=staff).select_related('customer__user', 'vehicle', 'coverage_plan')
-        elif user.is_administrator or user.is_claims_handler:
+        elif user.is_staff_member:
+            assigned_customers = StaffAssignmentService.get_assigned_customers(user)
+            return Policy.objects.filter(customer__in=assigned_customers).select_related('customer__user', 'vehicle', 'coverage_plan')
+        elif user.is_administrator or user.is_superuser:
             return Policy.objects.all().select_related('customer__user', 'vehicle', 'coverage_plan')
         return Policy.objects.none()
 
@@ -37,13 +63,7 @@ class PolicyDetailView(LoginRequiredMixin, DetailView):
 
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
-        user = self.request.user
-        if user.is_customer:
-            customer = getattr(user, 'customer_profile', None)
-            if not customer or obj.customer != customer:
-                raise PermissionDenied("You are not authorized to view this policy.")
-        elif not (user.is_underwriter or user.is_administrator or user.is_claims_handler):
-            raise PermissionDenied("Insufficient privileges to view this policy.")
+        _check_policy_access(self.request.user, obj)
         return obj
 
     def get_context_data(self, **kwargs):
@@ -66,14 +86,7 @@ class PolicyCertificateView(LoginRequiredMixin, View):
     """
     def get(self, request, pk):
         policy = get_object_or_404(Policy, pk=pk)
-
-        # RBAC and IDOR guard
-        if request.user.is_customer:
-            customer = getattr(request.user, 'customer_profile', None)
-            if not customer or policy.customer != customer:
-                raise PermissionDenied("You are not authorized to download this policy certificate.")
-        elif not (request.user.is_underwriter or request.user.is_administrator or request.user.is_claims_handler):
-            raise PermissionDenied("Insufficient privileges to access policy certificates.")
+        _check_policy_access(request.user, policy)
 
         pdf_bytes = PolicyService.generate_policy_certificate(policy, actor=request.user)
         response = HttpResponse(pdf_bytes, content_type='application/pdf')
@@ -88,14 +101,7 @@ class PolicyRenewView(LoginRequiredMixin, View):
     """
     def post(self, request, pk):
         policy = get_object_or_404(Policy, pk=pk)
-
-        # Authorization: customer owning policy or underwriter/admin
-        if request.user.is_customer:
-            customer = getattr(request.user, 'customer_profile', None)
-            if not customer or policy.customer != customer:
-                raise PermissionDenied("Unauthorized: You may only renew your own policies.")
-        elif not (request.user.is_underwriter or request.user.is_administrator):
-            raise PermissionDenied("Insufficient privileges to renew policy.")
+        _check_policy_access(request.user, policy)
 
         try:
             duration = int(request.POST.get('duration_years', 1))
@@ -119,14 +125,7 @@ class PolicyCancelView(LoginRequiredMixin, View):
     """
     def post(self, request, pk):
         policy = get_object_or_404(Policy, pk=pk)
-
-        # IDOR check:
-        if request.user.is_customer:
-            customer = getattr(request.user, 'customer_profile', None)
-            if not customer or policy.customer != customer:
-                raise PermissionDenied("You are not authorized to cancel this policy.")
-        elif not (request.user.is_underwriter or request.user.is_administrator):
-            raise PermissionDenied("Insufficient privileges to cancel policy.")
+        _check_policy_access(request.user, policy)
 
         try:
             reason = request.POST.get('reason', '')
@@ -144,14 +143,7 @@ class PolicyEndorsementRequestView(LoginRequiredMixin, View):
     """
     def post(self, request, pk):
         policy = get_object_or_404(Policy, pk=pk)
-
-        # IDOR check:
-        if request.user.is_customer:
-            customer = getattr(request.user, 'customer_profile', None)
-            if not customer or policy.customer != customer:
-                raise PermissionDenied("You are not authorized to request endorsements for this policy.")
-        elif not (request.user.is_underwriter or request.user.is_administrator):
-            raise PermissionDenied("Insufficient privileges to request endorsement.")
+        _check_policy_access(request.user, policy)
 
         endorsement_type = request.POST.get('endorsement_type')
         title = request.POST.get('title', f"Endorsement: {policy.policy_number}")
@@ -199,32 +191,38 @@ class PolicyEndorsementAdjudicateView(LoginRequiredMixin, View):
     """
     Staff/Underwriting endpoint to review and approve/reject endorsement requests.
     """
-    def post(self, request, request_pk):
+    def post(self, request, pk=None, request_pk=None):
         from service_requests.models import ServiceRequest
-        srv = get_object_or_404(ServiceRequest, pk=request_pk)
+        srv_id = request_pk or pk or request.POST.get('service_request_id')
+        srv = get_object_or_404(ServiceRequest, pk=srv_id)
+        policy = srv.policy
+        _check_policy_access(request.user, policy)
 
-        # RBAC: Only Underwriter or Administrator
+        # RBAC check: only underwriter or admin can adjudicate endorsements
         if not (request.user.is_underwriter or request.user.is_administrator):
-            raise PermissionDenied("Only Underwriters or Administrators can adjudicate endorsements.")
+            raise PermissionDenied("Unauthorized: Only underwriters or administrators may adjudicate endorsements.")
 
-        # Self-approval guard
-        if srv.customer.user == request.user:
-            raise PermissionDenied("Customer cannot adjudicate their own endorsement request.")
-
-        decision = request.POST.get('decision', '').upper()
-        notes = request.POST.get('notes', '')
+        action = request.POST.get('decision') or request.POST.get('action')  # 'APPROVE' or 'REJECT'
+        notes = request.POST.get('notes') or request.POST.get('resolution_notes', '')
 
         try:
-            PolicyService.adjudicate_endorsement(
-                service_request=srv,
-                reviewer=request.user,
-                decision=decision,
-                notes=notes,
-            )
-            messages.success(request, f"Endorsement request '{srv.request_number}' has been {decision}ED.")
+            if action in ('APPROVE', 'APPROVED'):
+                PolicyService.approve_endorsement_request(
+                    service_request=srv,
+                    underwriter_user=request.user,
+                    notes=notes,
+                )
+                messages.success(request, f"Endorsement '{srv.request_number}' approved and applied to policy.")
+            elif action in ('REJECT', 'REJECTED'):
+                PolicyService.reject_endorsement_request(
+                    service_request=srv,
+                    underwriter_user=request.user,
+                    notes=notes,
+                )
+                messages.warning(request, f"Endorsement '{srv.request_number}' was rejected.")
+            else:
+                messages.error(request, "Invalid endorsement adjudication action.")
         except ServiceValidationError as e:
             messages.error(request, str(e))
 
-        if srv.policy:
-            return redirect('policies:detail', pk=srv.policy.pk)
-        return redirect('staff:admin_dashboard')
+        return redirect('policies:detail', pk=policy.pk)

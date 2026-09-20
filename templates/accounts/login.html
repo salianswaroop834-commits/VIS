@@ -4,21 +4,21 @@
 
 {% block content %}
 <section class="py-5 bg-white">
-    <div class="container py-4 max-w-500">
+    <div class="container py-4 max-w-550">
         <div class="text-center mb-4">
             <span class="nx-brand-badge mb-2 d-inline-block">Authentication Portal</span>
             <h1 class="h3 fw-bold">Sign In to Nexisure</h1>
             <p class="text-secondary small">Access your policy portfolio or operational desk via Email OTP or password</p>
         </div>
 
-        <div class="nx-card shadow-sm p-4">
+        <div class="nx-card shadow-sm p-4 mb-4">
             <form method="post" action="{% url 'accounts:login' %}">
                 {% csrf_token %}
                 <div class="mb-3">
                     <label class="form-label fw-semibold text-secondary small">Email Address</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                        <input type="email" class="form-control" name="email" required placeholder="customer@example.com">
+                        <input type="email" id="loginEmail" class="form-control" name="email" required placeholder="customer@example.com">
                     </div>
                 </div>
 
@@ -26,7 +26,7 @@
                     <label class="form-label fw-semibold text-secondary small">Password</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
-                        <input type="password" class="form-control" name="password" required placeholder="••••••••">
+                        <input type="password" id="loginPassword" class="form-control" name="password" required placeholder="••••••••">
                     </div>
                 </div>
 
@@ -45,6 +45,56 @@
                 Don't have an account yet? <a href="{% url 'accounts:register' %}" class="text-primary fw-semibold">Register here</a>
             </div>
         </div>
+
+        <!-- Quick Demo Credentials Box -->
+        <div class="card border-0 bg-light p-3 rounded-3 shadow-none">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="fw-bold small text-dark"><i class="bi bi-key-fill text-primary me-1"></i> Quick Demo Accounts</span>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Click to Autofill</span>
+            </div>
+            <p class="text-muted small mb-2" style="font-size: 0.8rem;">
+                Click any role button below to automatically populate credentials for testing:
+            </p>
+            <div class="row g-2">
+                <div class="col-6">
+                    <button type="button" class="btn btn-sm btn-outline-secondary w-100 text-start py-2" onclick="autofill('aarav.patel@nexisure.test', 'DemoCustomer@2026')">
+                        <div class="fw-semibold small text-dark"><i class="bi bi-person me-1"></i> Customer 1</div>
+                        <div class="text-muted" style="font-size: 0.72rem;">aarav.patel@... (3 cars)</div>
+                    </button>
+                </div>
+                <div class="col-6">
+                    <button type="button" class="btn btn-sm btn-outline-secondary w-100 text-start py-2" onclick="autofill('priya.sharma@nexisure.test', 'DemoCustomer@2026')">
+                        <div class="fw-semibold small text-dark"><i class="bi bi-person me-1"></i> Customer 2</div>
+                        <div class="text-muted" style="font-size: 0.72rem;">priya.sharma@... (EV)</div>
+                    </button>
+                </div>
+                <div class="col-4">
+                    <button type="button" class="btn btn-sm btn-outline-primary w-100 text-start py-1.5" onclick="autofill('underwriter@nexisure.test', 'DemoStaff@2026')">
+                        <div class="fw-semibold" style="font-size: 0.75rem;"><i class="bi bi-file-earmark-check me-1"></i> Underwriter</div>
+                        <div class="text-muted" style="font-size: 0.68rem;">DemoStaff@2026</div>
+                    </button>
+                </div>
+                <div class="col-4">
+                    <button type="button" class="btn btn-sm btn-outline-primary w-100 text-start py-1.5" onclick="autofill('handler@nexisure.test', 'DemoStaff@2026')">
+                        <div class="fw-semibold" style="font-size: 0.75rem;"><i class="bi bi-shield-shaded me-1"></i> Claims Handler</div>
+                        <div class="text-muted" style="font-size: 0.68rem;">DemoStaff@2026</div>
+                    </button>
+                </div>
+                <div class="col-4">
+                    <button type="button" class="btn btn-sm btn-outline-dark w-100 text-start py-1.5" onclick="autofill('admin@nexisure.test', 'DemoAdmin@2026')">
+                        <div class="fw-semibold" style="font-size: 0.75rem;"><i class="bi bi-gear-wide-connected me-1"></i> Administrator</div>
+                        <div class="text-muted" style="font-size: 0.68rem;">DemoAdmin@2026</div>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </section>
+
+<script>
+function autofill(email, password) {
+    document.getElementById('loginEmail').value = email;
+    document.getElementById('loginPassword').value = password;
+}
+</script>
 {% endblock %}

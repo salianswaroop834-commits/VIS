@@ -5,9 +5,13 @@ and full-stack modularity.
 """
 
 import os
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url
+
+# Automated test execution flag
+TESTING = 'pytest' in sys.modules or (len(sys.argv) > 1 and sys.argv[1] == 'test')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,16 +24,25 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-nexisure-fallback-s
 
 DEBUG = os.getenv('DJANGO_DEBUG', 'True').lower() in ('true', '1', 't')
 
-ALLOWED_HOSTS = [h.strip() for h in os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0').split(',') if h.strip()]
-if 'testserver' not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append('testserver')
+ALLOWED_HOSTS = [h.strip() for h in os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0,.localhost,customer.localhost,staff.localhost,admin.localhost').split(',') if h.strip()]
+for host in ('.localhost', 'customer.localhost', 'staff.localhost', 'admin.localhost', 'testserver'):
+    if host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(host)
 
 CSRF_TRUSTED_ORIGINS = [
     orig.strip() for orig in os.getenv(
         'DJANGO_CSRF_TRUSTED_ORIGINS',
-        'http://localhost:8000,http://127.0.0.1:8000,http://0.0.0.0:8000'
+        'http://localhost:8000,http://127.0.0.1:8000,http://0.0.0.0:8000,http://*.localhost:8000,http://customer.localhost:8000,http://staff.localhost:8000,http://admin.localhost:8000'
     ).split(',') if orig.strip()
 ]
+for origin in (
+    'http://*.localhost:8000',
+    'http://customer.localhost:8000',
+    'http://staff.localhost:8000',
+    'http://admin.localhost:8000',
+):
+    if origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(origin)
 
 # Application definition
 DJANGO_APPS = [
@@ -173,6 +186,18 @@ PROTOTYPE_DISCLAIMER = (
 SUPABASE_URL = os.getenv('SUPABASE_URL', '')
 SUPABASE_ANON_KEY = os.getenv('SUPABASE_ANON_KEY', '')
 SUPABASE_SERVICE_ROLE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY', '')
+
+# RapidAPI Integrations (PAN & Vehicle Lookup)
+RAPIDAPI_KEY = os.getenv('RAPIDAPI_KEY', 'mock_key')
+RAPIDAPI_PAN_KEY = os.getenv('RAPIDAPI_PAN_KEY', '')
+RAPIDAPI_VEHICLE_KEY = os.getenv('RAPIDAPI_VEHICLE_KEY', RAPIDAPI_KEY)
+RAPIDAPI_PAN_HOST = os.getenv('RAPIDAPI_PAN_HOST', 'pan-verification.p.rapidapi.com')
+RAPIDAPI_VEHICLE_HOST = os.getenv('RAPIDAPI_VEHICLE_HOST', 'vehicle-rc-information-v2.p.rapidapi.com')
+
+# Firebase Phone Verification & 2FA
+FIREBASE_PROJECT_ID = os.getenv('FIREBASE_PROJECT_ID', 'nexisure-dev')
+FIREBASE_CLIENT_EMAIL = os.getenv('FIREBASE_CLIENT_EMAIL', '')
+FIREBASE_PRIVATE_KEY = os.getenv('FIREBASE_PRIVATE_KEY', '')
 
 # MLOps & MLflow Tracking
 MLFLOW_TRACKING_URI = os.getenv('MLFLOW_TRACKING_URI', str(BASE_DIR / 'mlruns'))

@@ -16,7 +16,11 @@ urlpatterns = [
 
     # Health Check & Search Engine Directives
     path('health/', HealthCheckView.as_view(), name='health-check'),
+    path('api/health/', RedirectView.as_view(url='/health/', permanent=False)),
     path('robots.txt', RobotsTxtView.as_view(), name='robots-txt'),
+    path('robots.txt/', RedirectView.as_view(url='/robots.txt', permanent=False)),
+    path('plans/', RedirectView.as_view(url='/coverage/', permanent=False)),
+    path('staff/dashboard/', RedirectView.as_view(url='/staff/underwriter/dashboard/', permanent=False)),
 
     # Public marketing & informational website
     path('', include('core.urls')),

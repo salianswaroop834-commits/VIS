@@ -1,0 +1,67 @@
+﻿{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Notifications | {{ PLATFORM_NAME }}{% endblock %}
+{% block meta_description %}Your Nexisure in-app notifications.{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <div>
+                    <h1 class="h3 fw-bold mb-1"><i class="bi bi-bell-fill text-primary me-2"></i>Notifications</h1>
+                    {% if unread_count > 0 %}
+                        <p class="text-muted small mb-0">You have <strong>{{ unread_count }}</strong> unread notification{{ unread_count|pluralize }}.</p>
+                    {% else %}
+                        <p class="text-muted small mb-0">All notifications have been read.</p>
+                    {% endif %}
+                </div>
+                {% if unread_count > 0 %}
+                <form method="POST" action="{% url 'notification-mark-all-read' %}" id="markAllForm">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-check2-all me-1"></i>Mark All Read</button>
+                </form>
+                {% endif %}
+            </div>
+            {% if notifications %}
+                <div class="d-flex flex-column gap-2">
+                    {% for notif in notifications %}
+                    <div class="card border-0 shadow-sm {% if not notif.is_read %}border-start border-primary border-3{% endif %}">
+                        <div class="card-body py-3 px-4">
+                            <div class="d-flex align-items-start justify-content-between gap-3">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="fw-semibold {% if not notif.is_read %}text-primary{% else %}text-dark{% endif %}">{{ notif.title }}</span>
+                                        {% if not notif.is_read %}<span class="badge bg-primary rounded-pill" style="font-size:.65rem;">NEW</span>{% endif %}
+                                    </div>
+                                    <p class="small text-muted mb-1">{{ notif.message }}</p>
+                                    <small class="text-muted" style="font-size:.72rem;">{{ notif.created_at|timesince }} ago</small>
+                                </div>
+                                <div class="d-flex gap-2 flex-shrink-0">
+                                    {% if notif.action_url %}<a href="{{ notif.action_url }}" class="btn btn-sm btn-outline-secondary py-1 px-2"><i class="bi bi-arrow-right"></i></a>{% endif %}
+                                    {% if not notif.is_read %}
+                                    <form method="POST" action="{% url 'notification-mark-read' notif.id %}" class="mark-read-form">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-primary py-1 px-2" title="Mark as read"><i class="bi bi-check2"></i></button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-bell-slash display-1 text-muted opacity-50"></i>
+                <h4 class="mt-4 text-muted">No Notifications Yet</h4>
+                <p class="text-muted small">You will receive notifications about policy renewals, claim updates, and security events here.</p>
+                <a href="{% url 'customers:dashboard' %}" class="btn btn-primary mt-2"><i class="bi bi-speedometer2 me-2"></i>Back to Dashboard</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
