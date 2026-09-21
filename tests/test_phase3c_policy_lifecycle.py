@@ -3,17 +3,17 @@ from decimal import Decimal
 from datetime import date, timedelta
 from django.urls import reverse
 from django.utils import timezone
-from accounts.models import User, UserRole
-from customers.models import CustomerProfile
-from staff.models import StaffProfile
-from vehicles.models import Vehicle, VehicleType, FuelType, UsageType
-from vehicles.services.vehicle_service import VehicleService
-from quotations.models import CoveragePlan, CoveragePlanCode
-from policies.models import Policy, PolicyStatus
-from policies.services.policy_service import PolicyService
-from policies.selectors import get_policy_renewal_lineage
-from service_requests.models import ServiceRequest, ServiceRequestStatus, ServiceRequestType
-from audit.models import AuditLog, AuditAction
+from apps.accounts.models import User, UserRole
+from apps.customers.models import CustomerProfile
+from apps.staff.models import StaffProfile
+from apps.vehicles.models import Vehicle, VehicleType, FuelType, UsageType
+from apps.vehicles.services.vehicle_service import VehicleService
+from apps.quotations.models import CoveragePlan, CoveragePlanCode
+from apps.policies.models import Policy, PolicyStatus
+from apps.policies.services.policy_service import PolicyService
+from apps.policies.selectors import get_policy_renewal_lineage
+from apps.service_requests.models import ServiceRequest, ServiceRequestStatus, ServiceRequestType
+from apps.audit.models import AuditLog, AuditAction
 from core.services import ServiceValidationError
 
 

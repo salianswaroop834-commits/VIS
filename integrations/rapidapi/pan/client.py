@@ -78,7 +78,7 @@ class RapidApiPANProvider(PANProvider):
 
         # Check canonical 15 synthetic users first
         try:
-            from vehicles.data.synthetic_dataset import get_user_by_pan
+            from apps.vehicles.data.synthetic_dataset import get_user_by_pan
             matched_user = get_user_by_pan(pan)
             if matched_user:
                 raw_data = {

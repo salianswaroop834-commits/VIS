@@ -5,15 +5,15 @@ from django.utils import timezone
 from django.urls import reverse
 from django.core.exceptions import PermissionDenied
 
-from accounts.models import User, UserRole
-from customers.models import CustomerProfile
-from staff.models import StaffProfile
-from vehicles.models import Vehicle, VehicleType
-from quotations.models import CoveragePlan, CoveragePlanCode, CoverageFeature, QuotationDraft
-from quotations.services.quotation_service import QuotationService
-from policies.models import Policy, PolicyStatus
-from policies.services.policy_service import PolicyService
-from audit.models import AuditLog, AuditAction
+from apps.accounts.models import User, UserRole
+from apps.customers.models import CustomerProfile
+from apps.staff.models import StaffProfile
+from apps.vehicles.models import Vehicle, VehicleType
+from apps.quotations.models import CoveragePlan, CoveragePlanCode, CoverageFeature, QuotationDraft
+from apps.quotations.services.quotation_service import QuotationService
+from apps.policies.models import Policy, PolicyStatus
+from apps.policies.services.policy_service import PolicyService
+from apps.audit.models import AuditLog, AuditAction
 from core.services import ServiceValidationError
 
 

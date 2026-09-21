@@ -3,10 +3,10 @@ from django.db import IntegrityError
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth import get_user_model
 
-from accounts.models import UserRole
-from predictions.models import ModelVersion, ModelLifecycleStatus, PredictionLog
-from predictions.services.mlops_service import MlopsService
-from audit.models import AuditLog
+from apps.accounts.models import UserRole
+from apps.predictions.models import ModelVersion, ModelLifecycleStatus, PredictionLog
+from apps.predictions.services.mlops_service import MlopsService
+from apps.audit.models import AuditLog
 
 User = get_user_model()
 

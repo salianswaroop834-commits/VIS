@@ -5,18 +5,18 @@ from django.utils import timezone
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from accounts.models import User, UserRole
-from customers.models import CustomerProfile
-from staff.models import StaffProfile
-from vehicles.models import Vehicle, VehicleType, FuelType, UsageType
-from quotations.models import CoveragePlan, CoveragePlanCode, QuotationDraft
-from quotations.services.quotation_service import QuotationService
-from policies.models import Policy, PolicyStatus
-from claims.models import Claim, ClaimStatus, ClaimEvent, ClaimEventType
-from service_requests.models import ServiceRequest, ServiceRequestType, ServiceRequestStatus
-from audit.services.audit_service import AuditService
-from rag.services.rag_service import RagService
-from predictions.models import ModelVersion, ModelLifecycleStatus
+from apps.accounts.models import User, UserRole
+from apps.customers.models import CustomerProfile
+from apps.staff.models import StaffProfile
+from apps.vehicles.models import Vehicle, VehicleType, FuelType, UsageType
+from apps.quotations.models import CoveragePlan, CoveragePlanCode, QuotationDraft
+from apps.quotations.services.quotation_service import QuotationService
+from apps.policies.models import Policy, PolicyStatus
+from apps.claims.models import Claim, ClaimStatus, ClaimEvent, ClaimEventType
+from apps.service_requests.models import ServiceRequest, ServiceRequestType, ServiceRequestStatus
+from apps.audit.services.audit_service import AuditService
+from apps.rag.services.rag_service import RagService
+from apps.predictions.models import ModelVersion, ModelLifecycleStatus
 
 
 class Command(BaseCommand):
@@ -242,7 +242,7 @@ class Command(BaseCommand):
             )
 
             # 7b. Insurance Add-on Riders
-            from policies.models import Addon, PolicyAddon
+            from apps.policies.models import Addon, PolicyAddon
             addons_data = [
                 ('ROADSIDE_ASSIST', 'Roadside Assistance', '24/7 towing, battery jumpstart, flat-tire, and fuel dispatch services.', Decimal('1200.00')),
                 ('ENGINE_PROTECT', 'Engine Protect', 'Covers engine damage due to water ingression, lubricant leakage, and hydro-lock.', Decimal('2500.00')),

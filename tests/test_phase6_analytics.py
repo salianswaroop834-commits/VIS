@@ -5,15 +5,15 @@ from django.urls import reverse
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 
-from accounts.models import UserRole
-from policies.models import Policy, PolicyStatus
-from quotations.models import CoveragePlan, CoveragePlanCode, QuotationDraft
-from customers.models import CustomerProfile
-from vehicles.models import Vehicle, VehicleType, FuelType
-from claims.models import Claim, ClaimStatus
-from service_requests.models import ServiceRequest, ServiceRequestStatus, ServiceRequestType
-from analytics import selectors
-from analytics.services.portfolio_analytics_service import PortfolioAnalyticsService
+from apps.accounts.models import UserRole
+from apps.policies.models import Policy, PolicyStatus
+from apps.quotations.models import CoveragePlan, CoveragePlanCode, QuotationDraft
+from apps.customers.models import CustomerProfile
+from apps.vehicles.models import Vehicle, VehicleType, FuelType
+from apps.claims.models import Claim, ClaimStatus
+from apps.service_requests.models import ServiceRequest, ServiceRequestStatus, ServiceRequestType
+from apps.analytics import selectors
+from apps.analytics.services.portfolio_analytics_service import PortfolioAnalyticsService
 
 User = get_user_model()
 

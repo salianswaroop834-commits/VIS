@@ -3,17 +3,17 @@ from decimal import Decimal
 from django.utils import timezone
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
-from accounts.models import User, UserRole
-from customers.models import CustomerProfile, KYCVerification, KYCStatus
-from vehicles.models import Vehicle, VehicleType, FuelType, UsageType
-from vehicles.services.vehicle_lookup_service import VehicleLookupService
-from quotations.services.quotation_service import QuotationService
-from quotations.models import CoveragePlanCode
-from payments.services.payment_service import PaymentService
-from policies.services.policy_service import PolicyService
-from policies.models import PolicyStatus
-from claims.services.claim_service import ClaimService
-from claims.models import ClaimStatus, ClaimDocument
+from apps.accounts.models import User, UserRole
+from apps.customers.models import CustomerProfile, KYCVerification, KYCStatus
+from apps.vehicles.models import Vehicle, VehicleType, FuelType, UsageType
+from apps.vehicles.services.vehicle_lookup_service import VehicleLookupService
+from apps.quotations.services.quotation_service import QuotationService
+from apps.quotations.models import CoveragePlanCode
+from apps.payments.services.payment_service import PaymentService
+from apps.policies.services.policy_service import PolicyService
+from apps.policies.models import PolicyStatus
+from apps.claims.services.claim_service import ClaimService
+from apps.claims.models import ClaimStatus, ClaimDocument
 from core.models import Notification
 from core.services import ServiceValidationError
 from integrations.firebase.verification import (
@@ -23,7 +23,7 @@ from integrations.firebase.verification import (
     FirebaseVerificationClient,
     get_firebase_provider,
 )
-from rag.services.rag_service import RagService
+from apps.rag.services.rag_service import RagService
 
 
 @pytest.fixture
@@ -46,7 +46,7 @@ def test_staff_handler(db):
         role=UserRole.CLAIMS_HANDLER,
     )
 
-    from staff.models import StaffProfile
+    from apps.staff.models import StaffProfile
     profile = StaffProfile.objects.create(
         user=user,
         staff_code='STF-CH-99',

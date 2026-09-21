@@ -4,9 +4,9 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from django.core.exceptions import PermissionDenied
 
-from accounts.models import User, UserRole
-from customers.models import CustomerProfile, KYCVerification, KYCStatus
-from staff.models import (
+from apps.accounts.models import User, UserRole
+from apps.customers.models import CustomerProfile, KYCVerification, KYCStatus
+from apps.staff.models import (
     StaffProfile,
     StaffDepartment,
     UnderwriterProfile,
@@ -14,12 +14,12 @@ from staff.models import (
     StaffCustomerAssignment,
     AssignmentStatus,
 )
-from staff.services.assignment_service import StaffAssignmentService
-from vehicles.models import Vehicle, VehicleType, FuelType, UsageType
-from vehicles.services.vehicle_lookup_service import VehicleLookupService
-from customers.services.pan_verification_service import PanVerificationService
+from apps.staff.services.assignment_service import StaffAssignmentService
+from apps.vehicles.models import Vehicle, VehicleType, FuelType, UsageType
+from apps.vehicles.services.vehicle_lookup_service import VehicleLookupService
+from apps.customers.services.pan_verification_service import PanVerificationService
 from core.services import ServiceValidationError
-from audit.models import AuditLog
+from apps.audit.models import AuditLog
 
 
 class CanonicalRoleArchitectureTests(TestCase):

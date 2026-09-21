@@ -5,17 +5,17 @@ from django.core.exceptions import PermissionDenied
 from django.urls import reverse
 from django.utils import timezone
 
-from accounts.models import User, UserRole
-from customers.models import CustomerProfile
-from vehicles.models import Vehicle, VehicleType, FuelType, UsageType
-from quotations.models import CoveragePlan, CoveragePlanCode, QuotationDraft
-from policies.models import Policy, PolicyStatus
-from claims.models import Claim, ClaimStatus
-from service_requests.models import ServiceRequest, ServiceRequestType, ServiceRequestStatus
-from chatbot.models import ChatSession, ChatMessage, ChatbotToolCall
-from chatbot.services.chatbot_service import ChatbotService
-from chatbot.services.llm_provider import get_llm_provider, FallbackInsuranceLLMProvider
-from rag.services.rag_service import RagService
+from apps.accounts.models import User, UserRole
+from apps.customers.models import CustomerProfile
+from apps.vehicles.models import Vehicle, VehicleType, FuelType, UsageType
+from apps.quotations.models import CoveragePlan, CoveragePlanCode, QuotationDraft
+from apps.policies.models import Policy, PolicyStatus
+from apps.claims.models import Claim, ClaimStatus
+from apps.service_requests.models import ServiceRequest, ServiceRequestType, ServiceRequestStatus
+from apps.chatbot.models import ChatSession, ChatMessage, ChatbotToolCall
+from apps.chatbot.services.chatbot_service import ChatbotService
+from apps.chatbot.services.llm_provider import get_llm_provider, FallbackInsuranceLLMProvider
+from apps.rag.services.rag_service import RagService
 
 
 @pytest.mark.django_db

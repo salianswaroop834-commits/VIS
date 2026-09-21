@@ -5,22 +5,22 @@ from django.utils import timezone
 from django.test import Client
 from django.urls import reverse
 from django.core.exceptions import PermissionDenied
-from accounts.models import User, UserRole
-from customers.models import CustomerProfile
-from staff.models import StaffProfile
-from staff.services.staff_service import StaffService
-from vehicles.models import Vehicle, VehicleType
-from vehicles.services.vehicle_service import VehicleService
-from quotations.models import CoveragePlan, CoveragePlanCode, QuotationDraft
-from quotations.services.quotation_service import QuotationService
-from policies.models import Policy, PolicyStatus
-from policies.services.policy_service import PolicyService
-from claims.models import Claim, ClaimStatus
-from claims.services.claim_service import ClaimService
-from service_requests.models import ServiceRequest, ServiceRequestStatus, ServiceRequestType
-from service_requests.services.service_request_service import ServiceRequestService
-from audit.models import AuditLog, AuditAction
-from audit.services.audit_service import AuditService
+from apps.accounts.models import User, UserRole
+from apps.customers.models import CustomerProfile
+from apps.staff.models import StaffProfile
+from apps.staff.services.staff_service import StaffService
+from apps.vehicles.models import Vehicle, VehicleType
+from apps.vehicles.services.vehicle_service import VehicleService
+from apps.quotations.models import CoveragePlan, CoveragePlanCode, QuotationDraft
+from apps.quotations.services.quotation_service import QuotationService
+from apps.policies.models import Policy, PolicyStatus
+from apps.policies.services.policy_service import PolicyService
+from apps.claims.models import Claim, ClaimStatus
+from apps.claims.services.claim_service import ClaimService
+from apps.service_requests.models import ServiceRequest, ServiceRequestStatus, ServiceRequestType
+from apps.service_requests.services.service_request_service import ServiceRequestService
+from apps.audit.models import AuditLog, AuditAction
+from apps.audit.services.audit_service import AuditService
 from core.services import ServiceValidationError
 
 

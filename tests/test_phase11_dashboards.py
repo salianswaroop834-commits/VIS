@@ -2,13 +2,13 @@ import pytest
 from datetime import date, timedelta
 from decimal import Decimal
 from django.urls import reverse
-from accounts.models import User, UserRole
-from customers.models import CustomerProfile
-from staff.models import StaffProfile
-from vehicles.models import Vehicle, VehicleType, FuelType, UsageType
-from quotations.models import CoveragePlan, CoveragePlanCode
-from policies.models import Policy, PolicyStatus
-from claims.models import Claim, ClaimStatus
+from apps.accounts.models import User, UserRole
+from apps.customers.models import CustomerProfile
+from apps.staff.models import StaffProfile
+from apps.vehicles.models import Vehicle, VehicleType, FuelType, UsageType
+from apps.quotations.models import CoveragePlan, CoveragePlanCode
+from apps.policies.models import Policy, PolicyStatus
+from apps.claims.models import Claim, ClaimStatus
 
 
 @pytest.mark.django_db

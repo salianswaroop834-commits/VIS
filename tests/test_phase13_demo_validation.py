@@ -1,17 +1,17 @@
 import pytest
 from decimal import Decimal
 from django.core.management import call_command
-from accounts.models import User, UserRole
-from customers.models import CustomerProfile
-from staff.models import StaffProfile
-from vehicles.models import Vehicle
-from quotations.models import CoveragePlan, QuotationDraft
-from policies.models import Policy, PolicyStatus
-from claims.models import Claim, ClaimStatus
-from service_requests.models import ServiceRequest
-from predictions.models import ModelVersion, ModelLifecycleStatus
-from rag.models import KnowledgeDocument
-from audit.models import AuditLog
+from apps.accounts.models import User, UserRole
+from apps.customers.models import CustomerProfile
+from apps.staff.models import StaffProfile
+from apps.vehicles.models import Vehicle
+from apps.quotations.models import CoveragePlan, QuotationDraft
+from apps.policies.models import Policy, PolicyStatus
+from apps.claims.models import Claim, ClaimStatus
+from apps.service_requests.models import ServiceRequest
+from apps.predictions.models import ModelVersion, ModelLifecycleStatus
+from apps.rag.models import KnowledgeDocument
+from apps.audit.models import AuditLog
 
 
 @pytest.mark.django_db

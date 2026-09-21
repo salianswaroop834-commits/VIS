@@ -109,7 +109,7 @@ class RapidApiVehicleProvider(VehicleProvider):
 
         # Check canonical 38 synthetic vehicles catalog first
         try:
-            from vehicles.data.synthetic_dataset import get_vehicle_by_registration
+            from apps.vehicles.data.synthetic_dataset import get_vehicle_by_registration
             matched = get_vehicle_by_registration(reg)
             if matched:
                 return normalize_vehicle_response(matched, reg)

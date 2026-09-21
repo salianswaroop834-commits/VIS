@@ -26,28 +26,28 @@ urlpatterns = [
     path('', include('core.urls')),
 
     # Authentication (Email OTP, Login, Logout, Session)
-    path('auth/', include('accounts.urls')),
+    path('auth/', include('apps.accounts.urls')),
 
     # Customer Portal
-    path('customer/', include('customers.urls')),
+    path('customer/', include('apps.customers.urls')),
 
     # Staff Portals (Underwriter, Claims Handler, Administrator)
-    path('staff/', include('staff.urls')),
+    path('staff/', include('apps.staff.urls')),
 
     # Core Insurance Lifecycle Domains
-    path('vehicles/', include('vehicles.urls')),
-    path('quotations/', include('quotations.urls')),
-    path('policies/', include('policies.urls')),
-    path('claims/', include('claims.urls')),
-    path('services/', include('service_requests.urls')),
-    path('payments/', include('payments.urls')),
+    path('vehicles/', include('apps.vehicles.urls')),
+    path('quotations/', include('apps.quotations.urls')),
+    path('policies/', include('apps.policies.urls')),
+    path('claims/', include('apps.claims.urls')),
+    path('services/', include('apps.service_requests.urls')),
+    path('payments/', include('apps.payments.urls')),
 
     # AI, RAG & Decision-Support Services
-    path('predictions/', include('predictions.urls')),
-    path('rag/', include('rag.urls')),
-    path('chatbot/', include('chatbot.urls')),
-    path('analytics/', include('analytics.urls')),
-    path('audit/', include('audit.urls')),
+    path('predictions/', include('apps.predictions.urls')),
+    path('rag/', include('apps.rag.urls')),
+    path('chatbot/', include('apps.chatbot.urls')),
+    path('analytics/', include('apps.analytics.urls')),
+    path('audit/', include('apps.audit.urls')),
 ]
 
 if settings.DEBUG:

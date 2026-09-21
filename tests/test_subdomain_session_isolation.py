@@ -19,9 +19,9 @@ from django.test import Client, TestCase
 from django.urls import reverse
 from django.conf import settings
 from django.core.management import call_command
-from accounts.models import User, UserRole
-from customers.models import CustomerProfile
-from staff.models import StaffProfile
+from apps.accounts.models import User, UserRole
+from apps.customers.models import CustomerProfile
+from apps.staff.models import StaffProfile
 
 
 @pytest.mark.django_db
