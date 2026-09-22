@@ -6,11 +6,11 @@ from django.utils import timezone
 
 from ml.pipelines.feature_pipeline import FeaturePipeline
 from ml.inference.predictor import InsurancePredictor
-from recommendations.services.recommendation_service import RecommendationService
-from recommendations.models import CoverageRecommendation
-from quotations.models import CoveragePlan, CoveragePlanCode
-from claims.models import Claim, ClaimStatus
-from predictions.models import ModelVersion, PredictionLog
+from apps.recommendations.services.recommendation_service import RecommendationService
+from apps.recommendations.models import CoverageRecommendation
+from apps.quotations.models import CoveragePlan, CoveragePlanCode
+from apps.claims.models import Claim, ClaimStatus
+from apps.predictions.models import ModelVersion, PredictionLog
 
 
 @pytest.mark.django_db

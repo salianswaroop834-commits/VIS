@@ -3,14 +3,14 @@ from decimal import Decimal
 from datetime import date, timedelta
 from django.utils import timezone
 from django.urls import reverse
-from accounts.models import User, UserRole
-from customers.models import CustomerProfile
-from vehicles.models import Vehicle, VehicleType, FuelType, UsageType
-from quotations.models import CoveragePlan, CoveragePlanCode, QuotationDraft
-from policies.models import Policy, PolicyStatus
-from payments.models import SimulatedPayment, CardNetwork
-from payments.services.payment_service import PaymentService
-from audit.models import AuditLog
+from apps.accounts.models import User, UserRole
+from apps.customers.models import CustomerProfile
+from apps.vehicles.models import Vehicle, VehicleType, FuelType, UsageType
+from apps.quotations.models import CoveragePlan, CoveragePlanCode, QuotationDraft
+from apps.policies.models import Policy, PolicyStatus
+from apps.payments.models import SimulatedPayment, CardNetwork
+from apps.payments.services.payment_service import PaymentService
+from apps.audit.models import AuditLog
 from core.services import ServiceValidationError
 
 

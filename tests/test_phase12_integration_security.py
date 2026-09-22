@@ -5,16 +5,16 @@ from django.utils import timezone
 from django.urls import reverse
 from django.core.exceptions import PermissionDenied
 
-from accounts.models import User, UserRole
-from customers.models import CustomerProfile
-from staff.models import StaffProfile
-from vehicles.models import Vehicle, VehicleType, FuelType, UsageType
-from quotations.models import CoveragePlan, CoveragePlanCode, QuotationDraft
-from policies.models import Policy, PolicyStatus
-from claims.models import Claim, ClaimStatus
-from claims.services.claim_service import ClaimService
-from service_requests.models import ServiceRequest, ServiceRequestType, ServiceRequestStatus
-from payments.services.payment_service import PaymentService
+from apps.accounts.models import User, UserRole
+from apps.customers.models import CustomerProfile
+from apps.staff.models import StaffProfile
+from apps.vehicles.models import Vehicle, VehicleType, FuelType, UsageType
+from apps.quotations.models import CoveragePlan, CoveragePlanCode, QuotationDraft
+from apps.policies.models import Policy, PolicyStatus
+from apps.claims.models import Claim, ClaimStatus
+from apps.claims.services.claim_service import ClaimService
+from apps.service_requests.models import ServiceRequest, ServiceRequestType, ServiceRequestStatus
+from apps.payments.services.payment_service import PaymentService
 from core.services import ServiceValidationError
 
 

@@ -1,7 +1,7 @@
 import pytest
-from rag.models import KnowledgeDocument, KnowledgeChunk, KnowledgeCategory
-from rag.services.rag_service import RagService
-from rag.services.vector_store_adapter import get_vector_store_adapter, PgVectorStoreAdapter, LocalVectorStoreAdapter
+from apps.rag.models import KnowledgeDocument, KnowledgeChunk, KnowledgeCategory
+from apps.rag.services.rag_service import RagService
+from apps.rag.services.vector_store_adapter import get_vector_store_adapter, PgVectorStoreAdapter, LocalVectorStoreAdapter
 
 
 @pytest.fixture

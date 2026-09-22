@@ -2,10 +2,10 @@ import pytest
 import os
 from pathlib import Path
 from django.urls import reverse
-from accounts.models import User, UserRole
-from predictions.models import ModelVersion, PredictionLog
-from predictions.services.mlops_service import MlopsService
-from audit.models import AuditLog
+from apps.accounts.models import User, UserRole
+from apps.predictions.models import ModelVersion, PredictionLog
+from apps.predictions.services.mlops_service import MlopsService
+from apps.audit.models import AuditLog
 
 
 @pytest.mark.django_db

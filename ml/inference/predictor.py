@@ -186,7 +186,7 @@ class InsurancePredictor:
     def _log_prediction(cls, input_data: Dict[str, Any], output_data: Dict[str, Any], latency_ms: float):
         """Asynchronously or safely logs the inference event to PredictionLog."""
         try:
-            from predictions.models import PredictionLog, ModelVersion
+            from apps.predictions.models import PredictionLog, ModelVersion
             model_ver = ModelVersion.objects.filter(
                 model_name='ClaimProbabilityPredictor',
                 is_active_for_inference=True

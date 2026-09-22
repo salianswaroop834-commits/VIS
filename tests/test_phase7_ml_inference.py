@@ -2,9 +2,9 @@ import pytest
 from decimal import Decimal
 from django.urls import reverse
 from ml.inference.predictor import InsurancePredictor
-from recommendations.services.recommendation_service import RecommendationService
-from predictions.models import ModelVersion, PredictionLog
-from quotations.models import CoveragePlanCode
+from apps.recommendations.services.recommendation_service import RecommendationService
+from apps.predictions.models import ModelVersion, PredictionLog
+from apps.quotations.models import CoveragePlanCode
 
 
 @pytest.mark.django_db

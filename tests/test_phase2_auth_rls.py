@@ -5,9 +5,9 @@ from django.urls import reverse
 from django.utils import timezone
 from django.core import mail
 from django.contrib.auth import get_user_model
-from accounts.models import EmailOtpToken, UserRole
-from accounts.services.otp_service import OtpService
-from customers.models import CustomerProfile
+from apps.accounts.models import EmailOtpToken, UserRole
+from apps.accounts.services.otp_service import OtpService
+from apps.customers.models import CustomerProfile
 
 User = get_user_model()
 

@@ -281,7 +281,7 @@ def sync_with_django_registry():
         import django
         os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
         django.setup()
-        from predictions.models import ModelVersion
+        from apps.predictions.models import ModelVersion
 
         meta_path = ARTIFACTS_DIR / 'models_metadata.json'
         if not meta_path.exists():

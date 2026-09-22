@@ -1,6 +1,6 @@
 import pytest
 from django.urls import reverse
-from analytics.services.eda_service import EdaService
+from apps.analytics.services.eda_service import EdaService
 
 
 @pytest.mark.django_db

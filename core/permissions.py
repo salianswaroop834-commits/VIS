@@ -185,7 +185,7 @@ class IsAssignedStaffOrAdmin(permissions.BasePermission):
             return bool(customer and customer.user == request.user)
 
         if request.user.is_staff_member and customer:
-            from staff.models import StaffCustomerAssignment
+            from apps.staff.models import StaffCustomerAssignment
             return StaffCustomerAssignment.objects.filter(
                 staff=request.user,
                 customer=customer,

@@ -2,10 +2,10 @@ import pytest
 from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.contrib import admin
-from accounts.models import UserRole, EmailOtpToken
-from customers.models import CustomerProfile
-from staff.models import StaffProfile, UnderwriterProfile, ClaimsHandlerProfile, StaffStatus
-from staff.services.staff_service import StaffService
+from apps.accounts.models import UserRole, EmailOtpToken
+from apps.customers.models import CustomerProfile
+from apps.staff.models import StaffProfile, UnderwriterProfile, ClaimsHandlerProfile, StaffStatus
+from apps.staff.services.staff_service import StaffService
 
 User = get_user_model()
 

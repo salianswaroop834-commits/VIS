@@ -2,8 +2,8 @@ import pytest
 from unittest.mock import MagicMock
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from accounts.models import UserRole
-from accounts.services.supabase_auth import SupabaseAuthService
+from apps.accounts.models import UserRole
+from apps.accounts.services.supabase_auth import SupabaseAuthService
 
 User = get_user_model()
 

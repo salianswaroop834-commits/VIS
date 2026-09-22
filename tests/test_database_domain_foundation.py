@@ -3,33 +3,33 @@ from datetime import date, timedelta
 import pytest
 from django.db import IntegrityError
 from django.utils import timezone
-from accounts.models import User, UserRole
-from customers.models import CustomerProfile
-from staff.models import StaffProfile
-from vehicles.models import Vehicle, VehicleType
-from quotations.models import CoveragePlan, CoveragePlanCode, CoverageFeature, QuotationDraft
-from quotations.services.quotation_service import QuotationService
-from quotations.selectors import (
+from apps.accounts.models import User, UserRole
+from apps.customers.models import CustomerProfile
+from apps.staff.models import StaffProfile
+from apps.vehicles.models import Vehicle, VehicleType
+from apps.quotations.models import CoveragePlan, CoveragePlanCode, CoverageFeature, QuotationDraft
+from apps.quotations.services.quotation_service import QuotationService
+from apps.quotations.selectors import (
     get_active_coverage_plans,
     get_coverage_plan_by_code,
     get_customer_quotations,
     get_quotation_by_number,
 )
-from policies.models import Policy, PolicyStatus
-from policies.selectors import (
+from apps.policies.models import Policy, PolicyStatus
+from apps.policies.selectors import (
     get_customer_policies,
     get_policy_by_number,
     get_policy_renewal_lineage,
     get_underwriter_portfolio,
 )
-from claims.models import Claim, ClaimStatus
-from claims.selectors import (
+from apps.claims.models import Claim, ClaimStatus
+from apps.claims.selectors import (
     get_customer_claims,
     get_pending_claims_queue,
     get_handler_assigned_claims,
     get_claim_by_number,
 )
-from vehicles.selectors import (
+from apps.vehicles.selectors import (
     get_customer_vehicles,
     get_vehicle_by_registration,
     get_vehicle_by_chassis,
@@ -210,7 +210,7 @@ class TestDatabaseDomainFoundation:
 
     def test_policy_renewal_lineage_and_selectors(self, domain_fixture):
         f = domain_fixture
-        from policies.services.policy_service import PolicyService
+        from apps.policies.services.policy_service import PolicyService
 
         renewal = PolicyService.renew_policy(f['policy'], duration_years=1)
         assert renewal.previous_policy == f['policy']

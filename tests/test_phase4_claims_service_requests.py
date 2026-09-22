@@ -4,17 +4,17 @@ from datetime import date, timedelta
 from django.urls import reverse
 from django.utils import timezone
 from django.core.files.uploadedfile import SimpleUploadedFile
-from accounts.models import User, UserRole
-from customers.models import CustomerProfile
-from staff.models import StaffProfile
-from vehicles.models import Vehicle, VehicleType
-from quotations.models import CoveragePlan, CoveragePlanCode
-from policies.models import Policy, PolicyStatus
-from claims.models import Claim, ClaimStatus, ClaimDocument, ClaimEvent, ClaimEventType
-from claims.services.claim_service import ClaimService
-from service_requests.models import ServiceRequest, ServiceRequestStatus, ServiceRequestType
-from service_requests.services.service_request_service import ServiceRequestService
-from audit.models import AuditLog, AuditAction
+from apps.accounts.models import User, UserRole
+from apps.customers.models import CustomerProfile
+from apps.staff.models import StaffProfile
+from apps.vehicles.models import Vehicle, VehicleType
+from apps.quotations.models import CoveragePlan, CoveragePlanCode
+from apps.policies.models import Policy, PolicyStatus
+from apps.claims.models import Claim, ClaimStatus, ClaimDocument, ClaimEvent, ClaimEventType
+from apps.claims.services.claim_service import ClaimService
+from apps.service_requests.models import ServiceRequest, ServiceRequestStatus, ServiceRequestType
+from apps.service_requests.services.service_request_service import ServiceRequestService
+from apps.audit.models import AuditLog, AuditAction
 from core.services import ServiceValidationError
 
 

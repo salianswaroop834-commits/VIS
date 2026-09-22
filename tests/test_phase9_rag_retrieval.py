@@ -1,9 +1,9 @@
 import pytest
 import numpy as np
 from django.urls import reverse
-from accounts.models import User, UserRole
-from rag.models import KnowledgeDocument, KnowledgeChunk
-from rag.services.rag_service import RagService
+from apps.accounts.models import User, UserRole
+from apps.rag.models import KnowledgeDocument, KnowledgeChunk
+from apps.rag.services.rag_service import RagService
 
 
 @pytest.mark.django_db

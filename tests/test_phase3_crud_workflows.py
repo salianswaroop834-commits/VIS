@@ -3,15 +3,15 @@ from datetime import date, timedelta
 import pytest
 from django.utils import timezone
 from django.contrib.auth import get_user_model
-from accounts.models import UserRole
-from customers.models import CustomerProfile
-from customers.services.customer_service import CustomerService
-from vehicles.models import Vehicle, VehicleType, FuelType, UsageType
-from vehicles.services.vehicle_service import VehicleService
-from quotations.models import CoveragePlan, CoveragePlanCode, QuotationDraft
-from quotations.services.quotation_service import QuotationService
-from policies.models import Policy, PolicyStatus
-from policies.services.policy_service import PolicyService, add_years_to_date
+from apps.accounts.models import UserRole
+from apps.customers.models import CustomerProfile
+from apps.customers.services.customer_service import CustomerService
+from apps.vehicles.models import Vehicle, VehicleType, FuelType, UsageType
+from apps.vehicles.services.vehicle_service import VehicleService
+from apps.quotations.models import CoveragePlan, CoveragePlanCode, QuotationDraft
+from apps.quotations.services.quotation_service import QuotationService
+from apps.policies.models import Policy, PolicyStatus
+from apps.policies.services.policy_service import PolicyService, add_years_to_date
 from core.services import ServiceValidationError
 
 User = get_user_model()
@@ -34,7 +34,7 @@ def test_customer_user():
 
 @pytest.fixture
 def test_underwriter_user():
-    from staff.models import StaffProfile
+    from apps.staff.models import StaffProfile
     user = User.objects.create_user(
         username='uw_tester',
         email='uw.tester@example.com',
